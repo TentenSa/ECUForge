@@ -35,6 +35,27 @@ class Span:
         return self.start + self.size
 
 
+class PhysicalMemoryRegion(Span):
+    """What the silicon has, from documented MCU profile facts only."""
+
+
+class LinkerMemoryRegion(Span):
+    """A MEMORY region / TASKING chip / LSL memory as the build declared it."""
+
+
+class LinkerSection(Span):
+    """A located output section (run address)."""
+
+
+class ImageMemoryRegion(Span):
+    """A contiguous run of bytes that will be programmed (HEX / S19 / ELF load data)."""
+
+
+def _check(obj, types, role):
+    if not isinstance(obj, types):
+        raise TypeError(f"{role} must be {' or '.join(t.__name__ for t in types)}, got {type(obj).__name__}")
+
+
 @dataclass
 class Relation:
     a: Span
@@ -54,23 +75,27 @@ class Views:
 
 def build_views(p) -> Views:
     prof = p.profile
-    phys = [Span("physical", w.name, w.start, w.size, prof.window_source(w),
+    phys = [PhysicalMemoryRegion("physical", w.name, w.start, w.size, prof.window_source(w),
                  {"kind": w.kind, "core": w.core, "cached": w.cached}) for w in prof.windows]
     regions, sections = [], []
     if p.map:
         for r in p.map.regions:
-            regions.append(Span("linker-region", r.name, r.origin, r.length,
+            regions.append(LinkerMemoryRegion("linker-region", r.name, r.origin, r.length,
                                 [Source(p.map.artifact, f"line {r.line}" if r.line else "memory table", r.name)],
                                 {"attrs": r.attrs, "aliases": list(r.aliases)}))
     for row in getattr(p, "layout_rows", []):
-        sections.append(Span("linker-section", row.name, row.vma, row.size, [row.source],
+        sections.append(LinkerSection("linker-section", row.name, row.vma, row.size, [row.source],
                              {"lma": row.lma, "class": row.cls}))
-    image = [Span("image", f"{a:#010x}+{n:#x}", a, n, [Source(o, loc)]) for a, n, o, loc in p.image.regions()]
+    image = [ImageMemoryRegion("image", f"{a:#010x}+{n:#x}", a, n, [Source(o, loc)]) for a, n, o, loc in p.image.regions()]
     return Views(phys, regions, sections, image)
 
 
 def relate_physical(prof, s: Span, phys: list[Span]) -> Relation:
-    """Linker or image span vs documented physical windows."""
+    """Linker or image span vs documented physical windows. The physical view is never
+    modified from linker or image data, and vice versa."""
+    _check(s, (LinkerMemoryRegion, LinkerSection, ImageMemoryRegion), "subject")
+    for w in phys:
+        _check(w, (PhysicalMemoryRegion,), "physical view element")
     for w in phys:
         if w.start <= s.start and s.end <= w.end:
             return Relation(s, w, CONTAINED)
@@ -86,7 +111,11 @@ def relate_physical(prof, s: Span, phys: list[Span]) -> Relation:
 
 
 def relate_complete(s: Span, view: list[Span], addr_fn=lambda x: x) -> Relation:
-    """Span vs a view that is complete (e.g. image bytes vs all linked load ranges)."""
+    """Span vs a view that is complete for the question (section vs linker regions,
+    image bytes vs linked load ranges). Never used against the physical view, which is
+    incomplete by construction (undocumented facts are null)."""
+    for v in view:
+        _check(v, (LinkerMemoryRegion, LinkerSection), "complete view element")
     lo, hi = addr_fn(s.start), addr_fn(s.start) + s.size
     inside = [v for v in view if v.start <= lo and hi <= v.end]
     if inside:

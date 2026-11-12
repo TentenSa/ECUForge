@@ -4,9 +4,11 @@ Evidence-first analysis of automotive embedded firmware builds. First target: Tr
 
 Status: **0.1.1a1, alpha.** Scored on synthetic fixtures; a reference-firmware fixture is written but not yet built.
 
-## Project rule
+## Project provenance boundary
 
-rea-auto must be reproducible from publicly accessible specifications, openly usable or testable artifacts, synthetic fixtures, or artifacts contributed by their owner. No employer- or customer-derived implementation knowledge is accepted as product evidence. Details in [CONTRIBUTING.md](CONTRIBUTING.md).
+rea-auto is developed from publicly available specifications, redistributable public artifacts, synthetic test fixtures, and artifacts contributed by their owners with appropriate rights. Proprietary employer, customer or third-party firmware, configuration, symbols, documentation and implementation details must not be used as repository source material.
+
+rea-auto analyses artifacts its users supply and are entitled to analyse. The repository ships no proprietary firmware, calibration data, linker configuration, security material or project-derived datasets; public tests use synthetic, authored or explicitly redistributable artifacts with recorded provenance. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What 0.1.x covers
 
@@ -54,7 +56,7 @@ The documented algorithm reproduces HighTec's public tc39x BMHD example (CRC 0x3
 pip install -e .            # core: Python stdlib only
 pip install -e ".[mcp]"     # MCP server (SDK 1.x or 2.x)
 pip install -e ".[yaml]"    # YAML manifests
-pip install -e ".[dev]"     # pytest
+pip install -e ".[dev]"     # pytest, hypothesis, ruff, pyyaml
 ```
 
 The core is dependency-light, not dependency-free by rule. DWARF, demangling and disassembly will come from established libraries or engines behind the artifact model.
@@ -83,7 +85,9 @@ Tools: `open_build`, `analyze`, `get_findings`, `get_evidence`, `lookup`, `read_
 
 ## Fixtures and scoring
 
-Three fixture classes: synthetic (A), public vendor examples (B, license permitting), reference firmware (C). `rea-auto verify` scores every expected fact as correct, unknown, conflict or false claim. A false claim is the most serious result. See [docs/fixtures.md](docs/fixtures.md).
+Fixture classes: synthetic, public (license permitting), reference firmware, fuzz seeds. Each fixture directory carries a `provenance.yaml` with per-file SHA-256; `scripts/check_repo.py` enforces it and blocks build artifacts anywhere else. `rea-auto verify` scores every expected fact as correct, unknown, conflict or false claim; a false claim is the most serious result. See [fixtures/README.md](fixtures/README.md) and [docs/fixtures.md](docs/fixtures.md).
+
+Parsers never drop input silently: anything not understood becomes a parse event with file and line, kept in `evidence.json`. Only events that can change a result become UNKNOWN findings.
 
 ## Layout
 
@@ -96,8 +100,10 @@ reauto/
   toolchains/    gnu/ (map, iLLD conventions, init tables), tasking/ (map, LSL, conventions, copy table)
   semantics/     a2l, autosar (experimental)
   analyze.py, verify.py, cli.py, mcp_server.py
-fixtures/reference/tricore/   reference firmware source, linker script, manifest
-tests/                        synthetic generator and tests by fixture class
+fixtures/       synthetic generator, reference firmware, fuzz seeds, public (empty); provenance.yaml per directory
+scripts/        check_repo.py (provenance, binary placement, size cap)
+tests/          unit, fixture, fuzz-property, rule and repository-guard tests
+.github/        CI (tests, ruff, repository guard, gitleaks) and PR checklist
 ```
 
 ## Roadmap

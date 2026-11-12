@@ -85,7 +85,6 @@ def verify(manifest_path):
                      m.get("toolchain"), m.get("bmhd_crc_mode"), bool(m.get("experimental")))
     res = run_all(p)
     vr = VerifyResult(allow_unknown=bool(m.get("allow_unknown")))
-    prof = p.profile
     conflicts = [f.claim for f in p.store.query(kind="conflict")]
     add = lambda lv, subj, what, e, a: vr.checks.append(Check(lv, subj, what, e, a))
     exp = m.get("expect", {})

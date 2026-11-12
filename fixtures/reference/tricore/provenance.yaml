@@ -1,0 +1,25 @@
+schema_version: 1
+artifacts:
+  - name: README.md
+    sha256: 99fe92253b718212c27cf4790c6d95164b28b473f3e20c1f407a362b9bd0cb32
+  - name: build_gnu.sh
+    sha256: ef3bc0efafbe68d70c0d73d6d17426c5bc9a1678697c0ad9dcf27cd6be806456
+  - name: link_gnu.ld
+    sha256: 118b2167b700868abd4d42c56f338bd19d429bc4fb4adbf900727c05decbdb6d
+  - name: manifest.json
+    sha256: 733804825a6ce9ca19ddbd1d5c5f166e0d2f5b93118f9ca88da4294bdcec3ea2
+  - name: src/main.c
+    sha256: 983381f6c39d139ff7e09639f6e78bb14a5dfd9ccf6feffe69870e3afeed5195
+  - name: src/start.c
+    sha256: dedf04f6eb4f170391649b7eca48a9c9dd7e4a71c7b721eb95e5ba803e6b50f7
+origin:
+  type: authored
+  note: Reference firmware written for this project. Expected values come only from link_gnu.ld and src/. Built outputs go to out/ and are not committed until the toolchain license is confirmed.
+rights:
+  license: MIT
+  redistribution_allowed: true
+purpose:
+  fixture_class: reference
+  targets: [elf, gnu_map, hexrec, layout, startup, raminit, verify]
+verification:
+  reviewed: true

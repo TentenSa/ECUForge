@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ..events import ParseEvent
+
 
 @dataclass
 class MemoryRegion:
@@ -62,9 +64,8 @@ class LinkMap:
     regions: list[MemoryRegion] = field(default_factory=list)
     sections: list[OutputSection] = field(default_factory=list)
     symbols: list[MapSymbol] = field(default_factory=list)
-    # constructs the parser did not understand: (line, text). Never dropped silently;
-    # the project reports each one as an UNKNOWN finding with file and line.
-    unsupported: list[tuple[int, str]] = field(default_factory=list)
+    # everything the parser did not turn into model data; never dropped (see formats/events.py)
+    events: list[ParseEvent] = field(default_factory=list)
 
     def symbol(self, name: str) -> MapSymbol | None:
         return next((s for s in self.symbols if s.name == name), None)

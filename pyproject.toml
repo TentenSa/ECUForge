@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rea-auto"
-version = "0.1.1a1"
+version = "0.1.1a2"
 description = "Evidence-first reverse engineering for automotive embedded builds (AURIX TC3xx, AUTOSAR Classic)"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -12,7 +12,7 @@ dependencies = []
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.2"]  # 1.x (FastMCP) and 2.x (MCPServer) both supported
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "hypothesis>=6", "pyyaml>=6", "ruff>=0.5"]
 yaml = ["pyyaml>=6"]
 
 [project.scripts]
@@ -25,3 +25,18 @@ include = ["reauto*"]
 [tool.setuptools.package-data]
 "reauto.silicon.infineon.aurix" = ["targets/*.json"]
 "reauto.architecture.tricore" = ["*.json"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
+extend-exclude = ["fixtures/generated"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E731", "B905", "B007", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"fixtures/synthetic/make_fixtures.py" = ["E501"]  # fixed-width map/A2L text
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

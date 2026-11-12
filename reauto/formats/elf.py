@@ -93,12 +93,25 @@ class ElfFile:
         return img
 
 
+class ElfFormatError(ValueError):
+    """The file is not a well-formed ELF32 object. Raised instead of any internal error."""
+
+
 def load_elf(path: str | Path) -> ElfFile:
     raw = Path(path).read_bytes()
+    try:
+        return _load_elf(path, raw)
+    except ElfFormatError:
+        raise
+    except (struct.error, IndexError, ValueError, UnicodeError, OverflowError) as e:
+        raise ElfFormatError(f"{path}: malformed ELF ({type(e).__name__}: {e})") from e
+
+
+def _load_elf(path, raw: bytes) -> ElfFile:
     if raw[:4] != b"\x7fELF":
-        raise ValueError("not an ELF file")
-    if raw[4] != 1:
-        raise ValueError("only ELF32 is supported in v1")
+        raise ElfFormatError("not an ELF file")
+    if len(raw) < 52 or raw[4] != 1:
+        raise ElfFormatError("only ELF32 is supported")
     little = raw[5] == 1
     e = "<" if little else ">"
     (_t, machine, _v, entry, phoff, shoff, _fl, _eh, phentsz, phnum, shentsz, shnum,

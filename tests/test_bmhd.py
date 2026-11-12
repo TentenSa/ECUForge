@@ -2,7 +2,6 @@
 import json
 import struct
 
-import pytest
 
 from conftest import find, has
 from reauto.analyze import open_project, run_all

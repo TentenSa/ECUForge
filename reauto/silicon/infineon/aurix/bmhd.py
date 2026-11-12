@@ -54,7 +54,7 @@ def recover_bmhd(p) -> list[dict]:
         if raw is None:
             st.add("startup", "unknown", "note", f"{name} ({a:#010x}) is not in the image", [slot_src])
             continue
-        g = lambda off, n: int.from_bytes(raw[off:off + n], "little")
+        g = lambda off, n, raw=raw: int.from_bytes(raw[off:off + n], "little")
         bmi, bid, stad = g(fields["BMI"], 2), g(fields["BMHDID"], 2), g(fields["STAD"], 4)
         crc, crc_n = g(fields["CRCBMHD"], 4), g(fields["CRCBMHD_N"], 4)
         src = _img_src(p, a, 16) + [slot_src, f_src]

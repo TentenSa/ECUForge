@@ -83,8 +83,8 @@ def render_markdown(p: Project, res: dict, max_rows: int = 200) -> str:
         o.append("None.")
     lay = res["layout"]
     if lay.regions:
-        o += ["", "## Linker regions vs physical memory", "| Linker region | Origin | Length | Used | Physical relation | Core | Evidence |",
-              "|---|---|---|---|---|---|---|"]
+        o += ["", "## Linker regions vs physical memory",
+              "| Linker region | Origin | Length | Used | Physical relation | Core | Evidence |", "|---|---|---|---|---|---|---|"]
         for r in lay.regions:
             o.append(f"| {r.name} | {_h(r.origin)} | 0x{r.length:X} | 0x{r.used:X} | {r.physical_relation} "
                      f"{r.physical or ''} | {'' if r.core is None else r.core} | {r.finding} |")

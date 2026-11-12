@@ -29,6 +29,8 @@ class MemoryImage:
     overlaps: list[tuple[int, int, str]] = field(default_factory=list)
     # optional cached/non-cached alias resolver, set by Project from the device profile
     alias: object = None
+    # record accounting set by loaders: every non-blank input line is either an accepted record or an event
+    stats: dict = field(default_factory=dict)
 
     # ---- construction -------------------------------------------------
     def add(self, addr: int, data: bytes, origin: str, locator: str) -> None:

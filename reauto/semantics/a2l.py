@@ -22,8 +22,6 @@ def correlate_a2l(p, decode_limit: int = 2000) -> dict:
     stats = {"objects": 0, "exact": 0, "inside": 0, "by_address_only": 0, "unresolved": 0,
              "addr_mismatch": 0, "size_mismatch": 0, "outside_segments": 0, "zero_address": 0,
              "decoded": 0, "out_of_limits": 0}
-    for ln, msg in a2l.problems:
-        st.add("a2l", "observed", "warning", msg, [Source(art, f"line {ln}")])
 
     # memory segments vs map regions
     for seg in a2l.segments:

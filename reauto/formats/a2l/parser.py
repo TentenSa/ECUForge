@@ -12,6 +12,8 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..events import ParseEvent
+
 DTYPE = {"UBYTE": (1, "B"), "SBYTE": (1, "b"), "UWORD": (2, "H"), "SWORD": (2, "h"),
          "ULONG": (4, "I"), "SLONG": (4, "i"), "A_UINT64": (8, "Q"), "A_INT64": (8, "q"),
          "FLOAT16_IEEE": (2, "e"), "FLOAT32_IEEE": (4, "f"), "FLOAT64_IEEE": (8, "d")}
@@ -292,7 +294,8 @@ def parse_a2l(path: str | Path) -> A2L:
                 _common(b, o)
                 a2l.axis_pts.append(o)
         except (ValueError, IndexError, TypeError) as e:
-            a2l.problems.append((b.line, f"{b.kind}: cannot parse ({e})"))
+            a2l.problems.append(ParseEvent("UNPARSED_BLOCK", b.line, f"{b.kind}: cannot parse ({e})", True,
+                                           f"/begin {b.kind}"))
     return a2l
 
 

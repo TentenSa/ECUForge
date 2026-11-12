@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 @pytest.fixture(scope="session")
 def gen(tmp_path_factory):
     out = tmp_path_factory.mktemp("synthetic")
-    subprocess.run([sys.executable, str(ROOT / "tests/fixtures/synthetic/make_fixtures.py"), str(out)], check=True,
+    subprocess.run([sys.executable, str(ROOT / "fixtures/synthetic/make_fixtures.py"), str(out)], check=True,
                    capture_output=True)
     return out
 

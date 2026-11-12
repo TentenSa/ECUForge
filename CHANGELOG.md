@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.1.1a1 (unreleased)
+## 0.1.1a2 (unreleased)
+- Parse events: parsers keep everything they do not model as `ParseEvent`s (file, line, raw text, context). All are written to `evidence.json`; only events that can change a result become UNKNOWN findings, plus one summary note per artifact.
+- HEX/S19: lines after the end-of-file record are kept as events; loaders account for every non-blank line.
+- ELF: malformed input raises `ElfFormatError` only.
+- Typed address-space views: `PhysicalMemoryRegion`, `LinkerMemoryRegion`, `LinkerSection`, `ImageMemoryRegion`; relation helpers reject mixed or physical-as-complete comparisons.
+- Fixture tree `fixtures/{synthetic,generated,public,reference,fuzz}` with `provenance.yaml` (schema v1, per-file SHA-256).
+- `scripts/check_repo.py`: provenance validation, build artifacts only in approved fixture directories, 5 MiB size cap.
+- Fuzz: Hypothesis property tests for HEX, S19, ELF, GNU map, TASKING map, LSL and A2L parsers.
+- Policy: provenance boundary in README; prohibited content, knowledge sources, security scope and contributor declaration in CONTRIBUTING; PR checklist; CI (tests, ruff, repository guard, gitleaks).
+
+## 0.1.1a1
 Project boundary: rea-auto is built only from public specifications, open artifacts, synthetic fixtures and owner-contributed artifacts (CONTRIBUTING.md).
 
 - Layered packages: core, formats, architecture/tricore, silicon/infineon/aurix, toolchains/{gnu,tasking}, semantics.

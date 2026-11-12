@@ -61,3 +61,19 @@ def test_levels(gen):
     assert {f.level for f in p.store.query(topic="input")} == {"L0"}
     assert {f.level for f in p.store.query(topic="startup")} == {"L1"}
     assert any(f.level == "L0" for f in p.store.query(topic="layout"))  # per-section artifact facts
+
+
+def test_views_are_typed_and_not_mixed():
+    import pytest
+    from reauto.core.views import ImageMemoryRegion, LinkerMemoryRegion, PhysicalMemoryRegion, relate_complete, \
+        relate_physical
+    from reauto.silicon.infineon.aurix.profile import DeviceProfile
+    phys = PhysicalMemoryRegion("physical", "P", 0x1000, 0x100)
+    link = LinkerMemoryRegion("linker-region", "L", 0x1000, 0x80)
+    img = ImageMemoryRegion("image", "I", 0x1000, 0x10)
+    prof = DeviceProfile.load("tc38x")
+    assert relate_physical(prof, link, [phys]).relation == "CONTAINED"
+    with pytest.raises(TypeError):
+        relate_physical(prof, phys, [phys])  # physical is never a subject
+    with pytest.raises(TypeError):
+        relate_complete(img, [phys])  # physical view is incomplete by construction

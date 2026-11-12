@@ -1,0 +1,25 @@
+schema_version: 1
+artifacts:
+  - name: seeds/minimal.a2l
+    sha256: 779b470acfea4570e013a851ae2f6810645bb807cbcaa5720a87bebb4a1cdc1d
+  - name: seeds/minimal.hex
+    sha256: f762c3d626783acf35b77f781874a1b81d66047d16c5128229b3f090eef622fb
+  - name: seeds/minimal.lsl
+    sha256: 265133fad52d2d2e240376400948d9b6ab2b3b3a4ecb37ed085a27d75f2f1728
+  - name: seeds/minimal.s19
+    sha256: 7e01bd23f9e384058acaa4065be657e295027998349b918ba115f734bf579718
+  - name: seeds/minimal_gnu.map
+    sha256: b87b598c62010878f0b868160be170dd7e438993f5a638aaf2b6cd58708b7335
+  - name: seeds/minimal_tasking.map
+    sha256: 8d2f3b606cd03e08e45c9998faa37abb43073ecf46c8d55bdb16a40a3345412e
+origin:
+  type: authored
+  note: Hand-written minimal seed inputs; mutations are generated at test time by Hypothesis and never committed.
+rights:
+  license: MIT
+  redistribution_allowed: true
+purpose:
+  fixture_class: fuzz
+  targets: [hexrec, srec, elf, gnu_map, tasking_map, lsl, a2l_parser]
+verification:
+  reviewed: true

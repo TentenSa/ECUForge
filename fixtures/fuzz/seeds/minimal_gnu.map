@@ -1,0 +1,19 @@
+Memory Configuration
+
+Name             Origin             Length             Attributes
+rom              0x10000000         0x00001000         xr
+ram              0x20000000         0x00000400         w!x
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+.text           0x10000000       0x20
+ *(.text)
+ .text          0x10000000       0x20 a.o
+                0x10000000                f
+ .text.long_function_name_that_wraps
+                0x10000020        0x0 a.o
+.data           0x20000000        0x8 load address 0x10000020
+ .data          0x20000000        0x8 a.o
+                0x20000000                v
+                0x20000008                end_marker = .

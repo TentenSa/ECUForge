@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass, field
 
 from .evidence import Source
-from .views import ALIASED, CONTAINED, OUTSIDE, OVERLAPS, UNKNOWN, Span, build_views, mem_kind, \
+from .views import OUTSIDE, OVERLAPS, ImageMemoryRegion, LinkerSection, build_views, mem_kind, \
     relate_complete, relate_physical
 
 # ELF / GNU section naming conventions (public ELF and GNU ld practice)
@@ -158,7 +158,7 @@ def recover_layout(p) -> Layout:
     # ---- section -> linker region -------------------------------------------
     if views.linker_regions:
         for row in lay.sections:
-            sp = Span("linker-section", row.name, row.vma, row.size, [row.source])
+            sp = LinkerSection("linker-section", row.name, row.vma, row.size, [row.source])
             rel = relate_complete(sp, views.linker_regions)
             lay.relations.append({"a": row.name, "b": rel.b.name if rel.b else None, "rel": rel.relation,
                                   "pair": "section-region"})
@@ -210,11 +210,11 @@ def recover_layout(p) -> Layout:
 
     # ---- image -> linker load ranges -----------------------------------------
     if p.image.segments and lay.sections:
-        loads = [Span("linker-section", s.name, prof.canonical(s.lma), s.size, [s.source])
+        loads = [LinkerSection("linker-section", s.name, prof.canonical(s.lma), s.size, [s.source])
                  for s in lay.sections if s.in_image is not None]
         for seg in views.image:
             for g0, g1 in _uncovered(prof.canonical(seg.start), seg.size, loads):
-                gap = Span("image", f"{g0:#010x}", g0, g1 - g0, seg.sources)
+                gap = ImageMemoryRegion("image", f"{g0:#010x}", g0, g1 - g0, seg.sources)
                 prel = relate_physical(prof, gap, views.physical)
                 info = {"start": g0, "size": g1 - g0, "physical_relation": prel.relation,
                         "physical": prel.b.name if prel.b else None}

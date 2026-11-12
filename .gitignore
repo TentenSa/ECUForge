@@ -3,4 +3,7 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 rea-auto-out/
-tests/fixtures/synthetic/gen/
+fixtures/generated/*
+!fixtures/generated/README.md
+.hypothesis/
+.ruff_cache/

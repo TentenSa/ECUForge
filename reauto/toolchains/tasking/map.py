@@ -17,6 +17,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from ...formats.events import ParseEvent
 from ...formats.map.model import InputSection, LinkMap, MapSymbol, MemoryRegion, OutputSection
 
 RE_IDX = re.compile(r"\s*\(\d+\)\s*$")
@@ -131,7 +132,9 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
         elif h and h[0] == "memory" and "total" in h:
             pass
         else:
-            lm.unsupported.append((rows[0][0] - 2 if rows else 0, "unsupported table: " + " | ".join(header)))
+            lm.events.append(ParseEvent("UNSUPPORTED_TABLE", rows[0][0] - 2 if rows else 0,
+                                        "unsupported table: " + " | ".join(header), False,
+                                        "table not used by any analysis"))
             continue
         if h and h[0] == "memory" and "total" in h:
             cm, ct = _col(header, "Memory"), _col(header, "Total")
@@ -208,7 +211,9 @@ def parse_lsl(path: str | Path) -> dict:
             "load_addr": (re.search(r"load_addr\s*=\s*([^,)]+)", attrs) or [None, None])[1],
             "selects": re.findall(r'select\s+"([^"]+)"', g.group(3)),
         })
-    return {"defines": defs, "memories": memories, "groups": groups, "unsupported": _lsl_unsupported(clean)}
+    return {"defines": defs, "memories": memories, "groups": groups,
+            "events": [ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, raw, True, "LSL top level")
+                       for ln, raw in _lsl_unsupported(clean)]}
 
 
 LSL_KNOWN = {"memory", "section_layout", "group", "select", "architecture", "derivative", "processor", "bus",

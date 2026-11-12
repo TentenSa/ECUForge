@@ -113,6 +113,7 @@ class EvidenceStore:
     def __init__(self) -> None:
         self.artifacts: dict[str, Artifact] = {}
         self.findings: list[Finding] = []
+        self.parse_events: list[dict] = []  # every ParseEvent, with its artifact; all preserved
         self._counters: dict[str, itertools.count] = {}
 
     def register(self, art: Artifact) -> Artifact:
@@ -163,5 +164,6 @@ class EvidenceStore:
 
     def to_json(self) -> str:
         return json.dumps({"artifacts": [asdict(a) | {"type": a.type} for a in self.artifacts.values()],
-                           "summary": self.summary(), "findings": [f.to_dict() for f in self.findings]},
+                           "summary": self.summary(), "findings": [f.to_dict() for f in self.findings],
+                           "parse_events": self.parse_events},
                           indent=2)
