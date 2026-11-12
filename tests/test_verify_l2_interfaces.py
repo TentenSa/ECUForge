@@ -33,6 +33,7 @@ def test_false_claim_and_unknown_are_distinguished(gen, tmp_path):
     def mutate(m):
         m["expect"]["L1"]["csa"][0]["size"] = "0x4000"  # rea-auto will confidently say 0x2000
         m["expect"]["L1"]["csa"].append({"core": 3, "start": "0x40000000", "size": "0x100"})  # absent
+        m["verification"] = {"allow_unexpected_unknown": False, "expected_unknowns": []}
     vr, rec = verify(_manifest(gen, tmp_path, mutate))
     s = vr.score()
     assert s["false_claim"] == 1 and s["unknown"] == 1 and not vr.ok

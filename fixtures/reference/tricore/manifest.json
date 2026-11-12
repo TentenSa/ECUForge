@@ -5,7 +5,7 @@
  "toolchain": "gnu",
  "artifacts": {"image": "out/reference.hex", "elf": "out/reference.elf", "map": "out/reference.map"},
  "provenance": {"source": "fixtures/reference/tricore: src/*.c and link_gnu.ld (expected values below come from link_gnu.ld only)"},
- "allow_unknown": true,
+ "verification": {"allow_unexpected_unknown": false, "expected_unknowns": []},
  "expect": {
   "L0": {
    "regions": [{"name": "pfls0", "origin": "0x80000000", "length": "0x100000"},

@@ -1,18 +1,25 @@
 """Score rea-auto against a fixture manifest of independently known facts.
 
 Every expected fact ends in exactly one category:
-  correct       rea-auto reports the expected value
-  unknown       rea-auto reports no value
-  conflict      rea-auto reports contradictory evidence about this item
-  false_claim   rea-auto confidently reports a different value  (most serious)
+  correct           rea-auto reports the expected value
+  expected_unknown  rea-auto reports no value, and the manifest lists this fact under
+                    verification.expected_unknowns with an id and a reason
+  unknown           rea-auto reports no value, not listed as expected
+  conflict          rea-auto reports contradictory evidence about this item
+  false_claim       rea-auto confidently reports a different value  (most serious)
 
 The manifest's expected values must come from a source independent of rea-auto:
 the reference firmware's own source and linker script, a vendor dump tool, or
 the generator of a synthetic fixture. Errors or conflicts rea-auto raises that
 the manifest does not list in `allowed_findings` are reported as unexplained.
 
-PASS requires zero false claims, zero unexplained findings, and (unless
-`allow_unknown: true`) every fact correct.
+Policy (manifest `verification` block):
+  allow_unexpected_unknown: bool  default true; release gates set false
+  expected_unknowns: [{id, what, reason}]  each unknown accepted individually
+
+PASS requires zero false claims, zero conflicts, zero unexplained findings and,
+when allow_unexpected_unknown is false, zero unexpected unknowns. There is no
+blanket switch: the old `allow_unknown` key is rejected.
 """
 from __future__ import annotations
 
@@ -24,7 +31,7 @@ from pathlib import Path
 
 from .analyze import open_project, run_all
 
-CATEGORIES = ("correct", "unknown", "conflict", "false_claim")
+CATEGORIES = ("correct", "expected_unknown", "unknown", "conflict", "false_claim")
 
 
 def _n(v):
@@ -56,7 +63,8 @@ class Check:
 class VerifyResult:
     checks: list[Check] = field(default_factory=list)
     unexplained: list[str] = field(default_factory=list)
-    allow_unknown: bool = False
+    allow_unexpected_unknown: bool = True
+    expected_unknowns_recovered: list[str] = field(default_factory=list)
 
     def score(self) -> dict:
         out = {"expected_facts": len(self.checks), **{c: 0 for c in CATEGORIES}, "by_level": {}}
@@ -70,21 +78,29 @@ class VerifyResult:
     @property
     def ok(self) -> bool:
         s = self.score()
-        if s["false_claim"] or s["unexplained"]:
+        if s["false_claim"] or s["conflict"] or s["unexplained"]:
             return False
-        return self.allow_unknown or s["correct"] == s["expected_facts"]
+        return self.allow_unexpected_unknown or s["unknown"] == 0
 
 
 def verify(manifest_path):
     mpath = Path(manifest_path)
     m = load_manifest(mpath)
     base = mpath.parent
+    if "allow_unknown" in m:
+        raise SystemExit(f"{mpath}: 'allow_unknown' is not supported; use verification.allow_unexpected_unknown "
+                         "and list each accepted unknown in verification.expected_unknowns")
+    pol = m.get("verification") or {}
+    expected_unknown = {e["what"]: e for e in pol.get("expected_unknowns", [])}
+    for e in expected_unknown.values():
+        if not (e.get("id") and e.get("reason")):
+            raise SystemExit(f"{mpath}: every expected unknown needs an id and a reason: {e}")
     art = {k: str(base / v) for k, v in (m.get("artifacts") or {}).items() if v}
     p = open_project(art.get("image"), art.get("elf"), art.get("map"), art.get("lsl"), art.get("a2l"),
                      str(base / m["device"]) if str(m.get("device", "")).endswith(".json") else m.get("device", "tc38x"),
                      m.get("toolchain"), m.get("bmhd_crc_mode"), bool(m.get("experimental")))
     res = run_all(p)
-    vr = VerifyResult(allow_unknown=bool(m.get("allow_unknown")))
+    vr = VerifyResult(allow_unexpected_unknown=bool(pol.get("allow_unexpected_unknown", True)))
     conflicts = [f.claim for f in p.store.query(kind="conflict")]
     add = lambda lv, subj, what, e, a: vr.checks.append(Check(lv, subj, what, e, a))
     exp = m.get("expect", {})
@@ -156,10 +172,12 @@ def verify(manifest_path):
     for c in vr.checks:
         if c.actual == c.expected:
             c.category = "correct"
+            if c.what in expected_unknown:
+                vr.expected_unknowns_recovered.append(expected_unknown[c.what]["id"])
         elif any(c.subject in x for x in conflicts):
             c.category = "conflict"
         elif c.actual is None:
-            c.category = "unknown"
+            c.category = "expected_unknown" if c.what in expected_unknown else "unknown"
         else:
             c.category = "false_claim"
 
@@ -172,6 +190,9 @@ def verify(manifest_path):
 
     record = res["run"] | {"manifest": {"name": m.get("name"), "sha256": hashlib.sha256(mpath.read_bytes()).hexdigest(),
                                         "fixture_class": m.get("fixture_class")},
+                           "policy": {"allow_unexpected_unknown": vr.allow_unexpected_unknown,
+                                      "expected_unknowns": list(expected_unknown.values())},
+                           "expected_unknowns_recovered": vr.expected_unknowns_recovered,
                            "score": vr.score(), "result": "PASS" if vr.ok else "FAIL",
                            "failures": [{"level": c.level, "what": c.what, "category": c.category,
                                          "expected": _fmt(c.expected), "actual": _fmt(c.actual)}
@@ -183,8 +204,10 @@ def verify(manifest_path):
 def render(vr: VerifyResult, name) -> str:
     s = vr.score()
     o = [f"# verify: {name}", "",
-         f"{s['expected_facts']} expected facts: {s['correct']} correct, {s['unknown']} unknown, "
-         f"{s['conflict']} conflict, {s['false_claim']} false claims; {s['unexplained']} unexplained findings", ""]
+         f"{s['expected_facts']} expected facts: {s['correct']} correct, {s['expected_unknown']} expected unknown, "
+         f"{s['unknown']} unexpected unknown, {s['conflict']} conflict, {s['false_claim']} false claims; "
+         f"{s['unexplained']} unexplained findings",
+         f"policy: allow_unexpected_unknown={vr.allow_unexpected_unknown}", ""]
     for lv, d in sorted(s["by_level"].items()):
         o.append(f"{lv}: " + ", ".join(f"{k} {v}" for k, v in d.items()))
     o.append("")
@@ -193,6 +216,8 @@ def render(vr: VerifyResult, name) -> str:
             o.append(f"{c.category.upper():12} {c.level} {c.what}: expected {_fmt(c.expected)}, rea-auto {_fmt(c.actual)}")
     for u in vr.unexplained:
         o.append(f"UNEXPLAINED  {u}")
+    for i in vr.expected_unknowns_recovered:
+        o.append(f"NOTE         expected unknown {i} was recovered; consider removing it from expected_unknowns")
     o += ["", "RESULT: " + ("PASS" if vr.ok else "FAIL")]
     return "\n".join(o)
 

@@ -11,7 +11,7 @@ artifacts:
   - name: link_gnu.ld
     sha256: 9054c57fa3776ee5fca93abb041ab022fd5bad979ccb5ef3efe65cb7b575df48
   - name: manifest.json
-    sha256: 733804825a6ce9ca19ddbd1d5c5f166e0d2f5b93118f9ca88da4294bdcec3ea2
+    sha256: a0d297b437459bbe58994e0f5e6bdd51f3233063a103ac5c3bc8ab8657cc2783
   - name: out/reference.elf
     sha256: 8d8c767bdb527c0cdaeb40a95c37a582d643eb36766b2193a942598f8b57dfe7
   - name: out/reference.hex
