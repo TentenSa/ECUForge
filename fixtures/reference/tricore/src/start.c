@@ -22,10 +22,33 @@ void _c_init(void)
     for (;;) { }
 }
 
-/* Reset entry: set the user stack pointer, then enter C. */
+/* Reset entry: set the user stack pointer, then enter C. `.previous` returns the
+ * assembler to the compiler's section so later debug expressions stay valid. */
 __asm__(".section .startup, \"ax\"\n"
         ".global _START\n"
         "_START:\n"
         "  movh.a %sp, hi:__USTACK0\n"
         "  lea    %sp, [%sp]lo:__USTACK0\n"
-        "  j      _c_init\n");
+        "  j      _c_init\n"
+        ".previous\n");
+
+/* Trap table: 8 classes, 32 bytes apart, each a jump to a stop loop.
+ * Interrupt table: two 32-byte entries (priority 0 unused, priority 1 -> irq_handler). */
+__asm__(".section .traptab_cpu0, \"ax\"\n"
+        ".global _trap_stop\n"
+        "_trap0: j _trap_stop\n .balign 32\n"
+        "_trap1: j _trap_stop\n .balign 32\n"
+        "_trap2: j _trap_stop\n .balign 32\n"
+        "_trap3: j _trap_stop\n .balign 32\n"
+        "_trap4: j _trap_stop\n .balign 32\n"
+        "_trap5: j _trap_stop\n .balign 32\n"
+        "_trap6: j _trap_stop\n .balign 32\n"
+        "_trap7: j _trap_stop\n .balign 32\n"
+        ".previous\n"
+        ".section .inttab_cpu0, \"ax\"\n"
+        "_int0: j _trap_stop\n .balign 32\n"
+        "_int1: j irq_handler\n .balign 32\n"
+        ".previous\n"
+        ".text\n"
+        "_trap_stop: j _trap_stop\n"
+        ".previous\n");

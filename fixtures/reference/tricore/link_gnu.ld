@@ -13,13 +13,13 @@ MEMORY
 SECTIONS
 {
   .startup      0x80000020 : { KEEP(*(.startup)) } > pfls0
-  .traptab_cpu0 0x80000100 : { PROVIDE(__TRAPTAB_CPU0 = .); KEEP(*(.traptab*)); . = 0x100; } > pfls0
+  .traptab_cpu0 0x80000100 : { __TRAPTAB_CPU0 = .; KEEP(*(.traptab*)); . = 0x100; } > pfls0
   .text         0x80000200 : { *(.text .text.*) } > pfls0
-  .rodata       0x80004000 : { *(.rodata .rodata.*) } > pfls0
-  .inttab_cpu0  0x80006000 : { PROVIDE(__INTTAB_CPU0 = .); KEEP(*(.inttab*)); . = 0x100; } > pfls0
+  .rodata       0x80004000 : { *(.rodata) *(.rodata.*) } > pfls0
+  .inttab_cpu0  0x80006000 : { __INTTAB_CPU0 = .; KEEP(*(.inttab*)); . = 0x100; } > pfls0
 
-  .data         0x70000000 : AT(0x80008000) { *(.data .data.*) } > dsram0
-  .bss          0x70001000 (NOLOAD) : { *(.bss .bss.* COMMON) } > dsram0
+  .data         0x70000000 : AT(0x80008000) { *(.data) *(.data.*) } > dsram0
+  .bss          0x70001000 (NOLOAD) : { *(.bss) *(.bss.*) *(COMMON) } > dsram0
 
   .clear_sec    0x80007000 : { PROVIDE(__clear_table = .);
                   LONG(ADDR(.bss)); LONG(SIZEOF(.bss));

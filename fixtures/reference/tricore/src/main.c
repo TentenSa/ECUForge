@@ -4,14 +4,19 @@
  * source and that linker script, not from rea-auto. */
 #include <stdint.h>
 
-uint32_t initialized = 0x12345678u;          /* .data : copy-init record          */
-uint32_t initialized_array[4] = {1, 2, 3, 4}; /* .data                             */
-uint32_t zeroed;                              /* .bss  : clear record              */
-uint8_t  zeroed_buffer[64];                   /* .bss                              */
-const uint16_t calib_value = 800u;            /* .rodata : decodable constant      */
-const uint16_t calib_curve[8] = {0, 1000, 2000, 3000, 10, 20, 30, 40};
+/* Explicit input-section names: placement must not depend on how a particular
+ * compiler names -fdata-sections output. The linker script keeps the standard
+ * *(.data .data.*) / *(.bss .bss.*) / *(.rodata .rodata.*) selectors. */
+#define IN(s) __attribute__((section(s)))
 
-volatile uint32_t irq_count;
+uint32_t initialized IN(".data.initialized") = 0x12345678u;          /* copy-init record */
+uint32_t initialized_array[4] IN(".data.initialized_array") = {1, 2, 3, 4};
+uint32_t zeroed IN(".bss.zeroed");                                    /* clear record     */
+uint8_t  zeroed_buffer[64] IN(".bss.zeroed_buffer");
+const uint16_t calib_value IN(".rodata.calib_value") = 800u;         /* decodable constant */
+const uint16_t calib_curve[8] IN(".rodata.calib_curve") = {0, 1000, 2000, 3000, 10, 20, 30, 40};
+
+volatile uint32_t irq_count IN(".bss.irq_count");
 
 void irq_handler(void) { irq_count++; }
 

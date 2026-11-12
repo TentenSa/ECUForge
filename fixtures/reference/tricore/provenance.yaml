@@ -1,25 +1,41 @@
 schema_version: 1
 artifacts:
   - name: README.md
-    sha256: 99fe92253b718212c27cf4790c6d95164b28b473f3e20c1f407a362b9bd0cb32
+    sha256: 25cfb5d08be6c025a69486573b90b97fd36d0796277794eab6a95ea70d3979bb
+  - name: TOOLCHAIN.md
+    sha256: fde8a972e063541146bb5c155f963813a06c8369a298289914a7ac200dc6e8e9
   - name: build_gnu.sh
-    sha256: ef3bc0efafbe68d70c0d73d6d17426c5bc9a1678697c0ad9dcf27cd6be806456
+    sha256: 7750ac1342f696300f0fdb23f835155414d2fe2877ae55b51d3d801bbec5ed7e
+  - name: check_reproducible.sh
+    sha256: 12d728fcbba8a8cfe5f7ed7fce74623925d7a4f4c3c452c26b059c6b69d3fbe7
   - name: link_gnu.ld
-    sha256: 118b2167b700868abd4d42c56f338bd19d429bc4fb4adbf900727c05decbdb6d
+    sha256: 9054c57fa3776ee5fca93abb041ab022fd5bad979ccb5ef3efe65cb7b575df48
   - name: manifest.json
     sha256: 733804825a6ce9ca19ddbd1d5c5f166e0d2f5b93118f9ca88da4294bdcec3ea2
+  - name: out/reference.elf
+    sha256: 8d8c767bdb527c0cdaeb40a95c37a582d643eb36766b2193a942598f8b57dfe7
+  - name: out/reference.hex
+    sha256: 3620436e6efdb6f147f1720770cda37c95bcadbdb1169185d1f0e601e82f5936
+  - name: out/reference.map
+    sha256: ba113c4c2e1cbe097178f72646345f0340a8126207347fe2eed492de4032a320
+  - name: out/reference.readelf.txt
+    sha256: 5d31d9bbae4403b2c79c1d65a06219c7ff5d6eee158ee4977877ebe209e10ee1
   - name: src/main.c
-    sha256: 983381f6c39d139ff7e09639f6e78bb14a5dfd9ccf6feffe69870e3afeed5195
+    sha256: 75250bf5ece7fa76b2102df70f43167e0a35b5effbf601c628f8aa65d228a95d
   - name: src/start.c
-    sha256: dedf04f6eb4f170391649b7eca48a9c9dd7e4a71c7b721eb95e5ba803e6b50f7
+    sha256: 79d3b5429a2501e98b012043b04bba6f9e99c86346413d297edcb6b6a12b3848
 origin:
   type: authored
-  note: Reference firmware written for this project. Expected values come only from link_gnu.ld and src/. Built outputs go to out/ and are not committed until the toolchain license is confirmed.
+  note: Reference firmware written for this project. Expected values in manifest.json come only from link_gnu.ld and src/. Files under out/ are produced by build_gnu.sh with the toolchain in TOOLCHAIN.md and are reproducible (check_reproducible.sh).
+generator:
+  name: build_gnu.sh
+  toolchain: tricore-elf-gcc 13.4.1 20260422 / binutils 2.40 (commits in TOOLCHAIN.md)
 rights:
   license: MIT
   redistribution_allowed: true
+  toolchain_code_in_outputs: none (-nostdlib, -ffreestanding)
 purpose:
   fixture_class: reference
-  targets: [elf, gnu_map, hexrec, layout, startup, raminit, verify]
+  targets: [elf, gnu_map, hexrec, layout, startup, raminit, vectors, verify]
 verification:
   reviewed: true
