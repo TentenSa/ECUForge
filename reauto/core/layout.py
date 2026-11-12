@@ -116,10 +116,14 @@ def recover_layout(p) -> Layout:
                 raw.append((s.name, s.addr, lma_of.get(s.name, s.addr), s.size,
                             Source(p.elf_art.short, f"section [{s.index}] {s.name}")))
 
+    excluded = []
     for name, vma, lma, size, src in raw:
         if not size:
             continue
         es = elf_secs.get(name)
+        if es is not None and not es.alloc:  # observed ELF flag: occupies no target memory
+            excluded.append(name)
+            continue
         cls, ck = classify_section(name, es.perms if es else None, es.nobits if es else None)
         vr = lm.region_of(vma) if lm else None
         lr = lm.region_of(lma) if lm else None
@@ -152,6 +156,11 @@ def recover_layout(p) -> Layout:
                    [src] + [Source(a.short, f"addr {lma:#010x}+{size:#x}") for a in p.image_artifacts],
                    {"present": present, "size": size}, [f.id])
     p.layout_rows = lay.sections
+    if excluded:
+        st.add("layout", "observed", "info",
+               f"{len(excluded)} sections excluded from memory layout: the ELF marks them not allocated "
+               f"(SHF_ALLOC clear): {', '.join(excluded[:8])}{', ...' if len(excluded) > 8 else ''}",
+               [Source(p.elf_art.short, "section header flags")], {"sections": excluded}, level="L0")
 
     views = build_views(p)
 

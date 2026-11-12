@@ -77,3 +77,16 @@ def test_views_are_typed_and_not_mixed():
         relate_physical(prof, phys, [phys])  # physical is never a subject
     with pytest.raises(TypeError):
         relate_complete(img, [phys])  # physical view is incomplete by construction
+
+
+def test_non_allocated_sections_excluded_by_elf_flag():
+    """Real GNU output: .debug_* / .comment sit at address 0 in *default*. The ELF marks them not
+    allocated, so they must not create overlaps or 'outside region' findings."""
+    from conftest import ROOT
+    out = ROOT / "fixtures/reference/tricore/out"
+    p = open_project(image=out / "reference.hex", elf=out / "reference.elf", map_=out / "reference.map")
+    lay = run_all(p)["layout"]
+    assert not p.store.query(kind="conflict")
+    assert not any(r.name.startswith(".debug") for r in lay.sections)
+    f = find(p, r"sections excluded from memory layout: the ELF marks them not allocated", topic="layout")
+    assert ".debug_info" in f.data["sections"] and ".comment" in f.data["sections"]
