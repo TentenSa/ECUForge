@@ -122,6 +122,10 @@ def verify(manifest_path):
         g = syms.get(s["name"])
         add("L0", s["name"], f"symbol {s['name']}", _n(s["addr"]), g.addr if g else None)
 
+    for r in L0.get("image", []):  # address range expected fully present in the programmed image
+        a, n = _n(r["addr"]), _n(r["size"])
+        add("L0", f"image {r['addr']}", f"image {r['addr']}+{r['size']}", n, p.image.coverage(a, n) or None)
+
     # L1 structural recovery
     L1 = exp.get("L1", {})
     stc = res["startup"]

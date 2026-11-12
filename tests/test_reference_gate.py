@@ -72,3 +72,15 @@ def test_blanket_allow_unknown_rejected(gen, tmp_path):
     f.write_text(json.dumps(m))
     with pytest.raises(SystemExit):
         verify(f)
+
+
+def test_image_coverage_expectation(gen, tmp_path):
+    m = json.loads((gen / "manifest.json").read_text())
+    m["artifacts"] = {k: str(gen / v) for k, v in m["artifacts"].items()}
+    m["device"] = str(gen / m["device"])
+    m["expect"]["L0"]["image"] = [{"addr": "0x80001000", "size": "0x100"}, {"addr": "0x90000000", "size": "0x10"}]
+    f = tmp_path / "i.json"
+    f.write_text(json.dumps(m))
+    vr, _ = verify(f)
+    cats = {c.what: c.category for c in vr.checks if c.what.startswith("image")}
+    assert cats == {"image 0x80001000+0x100": "correct", "image 0x90000000+0x10": "unknown"}
