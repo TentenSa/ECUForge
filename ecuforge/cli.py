@@ -1,4 +1,4 @@
-"""rea-auto command line."""
+"""ECUForge command line."""
 from __future__ import annotations
 
 import argparse
@@ -29,11 +29,11 @@ def _open(a):
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser("rea-auto", description="Evidence-first analysis of automotive embedded builds")
+    ap = argparse.ArgumentParser("ecuforge", description="Evidence-first analysis of automotive embedded builds")
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("analyze", help="run all analyses; write report.md, evidence.json, run.json")
     _common(a)
-    a.add_argument("-o", "--out", default="rea-auto-out")
+    a.add_argument("-o", "--out", default="ecuforge-out")
     f = sub.add_parser("findings", help="run all analyses and print findings")
     _common(f)
     f.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
@@ -45,7 +45,7 @@ def main(argv=None) -> int:
     q = sub.add_parser("lookup", help="resolve a symbol name or an address")
     _common(q)
     q.add_argument("what")
-    v = sub.add_parser("verify", help="score rea-auto against a fixture manifest")
+    v = sub.add_parser("verify", help="score ECUForge against a fixture manifest")
     v.add_argument("manifest")
     v.add_argument("-o", "--out", help="write verify run record JSON here")
     sub.add_parser("profiles", help="list MCU profiles")

@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rea-auto"
-version = "0.1.1a2"
+name = "ecuforge"
+version = "0.1.1"
 description = "Evidence-first reverse engineering for automotive embedded builds (AURIX TC3xx, AUTOSAR Classic)"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -16,15 +16,15 @@ dev = ["pytest>=8", "hypothesis>=6", "pyyaml>=6", "ruff>=0.5"]
 yaml = ["pyyaml>=6"]
 
 [project.scripts]
-rea-auto = "reauto.cli:main"
-rea-auto-mcp = "reauto.mcp_server:main"
+ecuforge = "ecuforge.cli:main"
+ecuforge-mcp = "ecuforge.mcp_server:main"
 
 [tool.setuptools.packages.find]
-include = ["reauto*"]
+include = ["ecuforge*"]
 
 [tool.setuptools.package-data]
-"reauto.silicon.infineon.aurix" = ["targets/*.json"]
-"reauto.architecture.tricore" = ["*.json"]
+"ecuforge.silicon.infineon.aurix" = ["targets/*.json"]
+"ecuforge.architecture.tricore" = ["*.json"]
 
 [tool.ruff]
 line-length = 130

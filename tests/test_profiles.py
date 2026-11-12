@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from reauto.silicon.infineon.aurix.profile import DeviceProfile, TARGET_DIR
+from ecuforge.silicon.infineon.aurix.profile import DeviceProfile, TARGET_DIR
 
 SHIPPED = DeviceProfile.available()
 

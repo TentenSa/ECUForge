@@ -1,7 +1,7 @@
-"""MCP server exposing rea-auto to agents (stdio). Requires `pip install mcp`.
+"""MCP server exposing ECUForge to agents (stdio). Requires `pip install mcp`.
 
 Register e.g. in Claude Code:
-  claude mcp add rea-auto -- python -m reauto.mcp_server
+  claude mcp add ecuforge -- python -m ecuforge.mcp_server
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ except ImportError:  # SDK 1.x
 from .analyze import open_project, render_markdown, run_all
 from .silicon.infineon.aurix.profile import DeviceProfile
 
-mcp = _Server("rea-auto")
+mcp = _Server("ecuforge")
 _sessions: dict[str, dict] = {}
 
 
@@ -27,7 +27,7 @@ def _get(sid: str) -> dict:
 
 @mcp.tool()
 def list_profiles() -> list[str]:
-    """List AURIX device profiles (classification windows) shipped with rea-auto."""
+    """List AURIX device profiles (classification windows) shipped with ECUForge."""
     return DeviceProfile.available()
 
 
@@ -119,7 +119,7 @@ def read_memory(session_id: str, address: str, length: int = 64) -> dict:
 
 @mcp.tool()
 def verify_manifest(manifest_path: str) -> str:
-    """Check rea-auto against a hand-verified fixture manifest (L0/L1/L2). Returns the verdict text."""
+    """Check ECUForge against a hand-verified fixture manifest (L0/L1/L2). Returns the verdict text."""
     from .verify import render, verify
     vr, _ = verify(manifest_path)
     return render(vr, manifest_path)  # score: correct / unknown / conflict / false_claim

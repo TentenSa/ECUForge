@@ -1,8 +1,8 @@
 """Synthetic class: formats and malformed inputs (L0)."""
 import pytest
 
-from reauto.analyze import open_project
-from reauto.formats.hexrec import RecordError, load_ihex, load_srec
+from ecuforge.analyze import open_project
+from ecuforge.formats.hexrec import RecordError, load_ihex, load_srec
 
 
 def test_hex_and_srec_decode_identically(gen):

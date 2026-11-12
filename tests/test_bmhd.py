@@ -4,8 +4,8 @@ import struct
 
 
 from conftest import find, has
-from reauto.analyze import open_project, run_all
-from reauto.silicon.infineon.aurix.crc import ALGORITHMS, DISCOVERY_CANDIDATES, crc32
+from ecuforge.analyze import open_project, run_all
+from ecuforge.silicon.infineon.aurix.crc import ALGORITHMS, DISCOVERY_CANDIDATES, crc32
 
 
 def test_crc_check_values():
@@ -22,8 +22,8 @@ def test_documented_algorithm_matches_public_vector():
 
 
 def _patched(gen, tmp_path, crc_fn, pair=True):
-    from reauto.formats.hexrec import load_ihex
-    from reauto.formats.image import MemoryImage
+    from ecuforge.formats.hexrec import load_ihex
+    from ecuforge.formats.image import MemoryImage
     img = load_ihex(gen / "app.hex", "x", MemoryImage())
     seg = img.find(0xAF400000)
     c = crc_fn(bytes(seg.data[0:8]))

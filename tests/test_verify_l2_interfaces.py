@@ -6,8 +6,8 @@ import sys
 import pytest
 
 from conftest import ROOT, has
-from reauto.analyze import open_project, run_all
-from reauto.verify import verify
+from ecuforge.analyze import open_project, run_all
+from ecuforge.verify import verify
 
 
 def test_manifest_passes_with_full_score(gen):
@@ -31,7 +31,7 @@ def _manifest(gen, tmp_path, mutate):
 
 def test_false_claim_and_unknown_are_distinguished(gen, tmp_path):
     def mutate(m):
-        m["expect"]["L1"]["csa"][0]["size"] = "0x4000"  # rea-auto will confidently say 0x2000
+        m["expect"]["L1"]["csa"][0]["size"] = "0x4000"  # ECUForge will confidently say 0x2000
         m["expect"]["L1"]["csa"].append({"core": 3, "start": "0x40000000", "size": "0x100"})  # absent
         m["verification"] = {"allow_unexpected_unknown": False, "expected_unknowns": []}
     vr, rec = verify(_manifest(gen, tmp_path, mutate))
@@ -57,23 +57,23 @@ def test_l2_is_gated(gen, syn_profile):
 
 
 def test_cli(gen, tmp_path):
-    r = subprocess.run([sys.executable, "-m", "reauto.cli", "analyze", "--image", str(gen / "app.hex"), "--elf",
+    r = subprocess.run([sys.executable, "-m", "ecuforge.cli", "analyze", "--image", str(gen / "app.hex"), "--elf",
                         str(gen / "app.elf"), "--map", str(gen / "app_gnu.map"), "-o", str(tmp_path)],
                        cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout + r.stderr  # documented profile: no errors on the clean synthetic build
     run = json.loads((tmp_path / "run.json").read_text())
-    assert run["tool"]["name"] == "rea-auto" and run["target"]["silicon"] == "infineon.aurix.tc3xx.tc38x"
-    v = subprocess.run([sys.executable, "-m", "reauto.cli", "verify", str(gen / "manifest.json")], cwd=ROOT,
+    assert run["tool"]["name"] == "ecuforge" and run["target"]["silicon"] == "infineon.aurix.tc3xx.tc38x"
+    v = subprocess.run([sys.executable, "-m", "ecuforge.cli", "verify", str(gen / "manifest.json")], cwd=ROOT,
                        capture_output=True, text=True)
     assert v.returncode == 0 and "RESULT: PASS" in v.stdout
 
 
 def test_mcp_tools(gen):
     pytest.importorskip("mcp")
-    from reauto import mcp_server
+    from ecuforge import mcp_server
     sid = mcp_server.open_build(str(gen / "app.hex"), str(gen / "app.elf"), str(gen / "app_gnu.map"))["session_id"]
     res = mcp_server.analyze(sid)
-    assert res["run"]["tool"]["name"] == "rea-auto"
+    assert res["run"]["tool"]["name"] == "ecuforge"
     assert mcp_server.get_findings(sid, kind="unknown")["total"] > 0
     assert mcp_server.read_memory(sid, "0x80001000", 2)["bytes"] == "2003"
     assert "MEMORY" in mcp_server.linker_draft(sid)

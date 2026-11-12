@@ -13,11 +13,11 @@ import os
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from conftest import ROOT
-from reauto.formats.a2l.parser import parse_a2l
-from reauto.formats.elf import ElfFormatError, load_elf
-from reauto.formats.hexrec import RecordError, load_ihex, load_srec
-from reauto.toolchains.gnu.map import parse_gnu_map
-from reauto.toolchains.tasking.map import parse_lsl, parse_tasking_map
+from ecuforge.formats.a2l.parser import parse_a2l
+from ecuforge.formats.elf import ElfFormatError, load_elf
+from ecuforge.formats.hexrec import RecordError, load_ihex, load_srec
+from ecuforge.toolchains.gnu.map import parse_gnu_map
+from ecuforge.toolchains.tasking.map import parse_lsl, parse_tasking_map
 
 SEEDS = ROOT / "fixtures/fuzz/seeds"
 CFG = settings(max_examples=int(os.environ.get("REA_FUZZ_EXAMPLES", "150")), deadline=None,

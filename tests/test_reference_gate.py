@@ -8,7 +8,7 @@ import subprocess
 import pytest
 
 from conftest import ROOT
-from reauto.verify import verify
+from ecuforge.verify import verify
 
 REFS = sorted(p.parent for p in (ROOT / "fixtures/reference").glob("*/manifest.json"))
 
@@ -42,7 +42,7 @@ def _manifest(gen, tmp_path, **policy):
     m = json.loads((gen / "manifest.json").read_text())
     m["artifacts"] = {k: str(gen / v) for k, v in m["artifacts"].items()}
     m["device"] = str(gen / m["device"])
-    m["expect"]["L1"]["csa"].append({"core": 3, "start": "0x40000000", "size": "0x100"})  # rea-auto: no value
+    m["expect"]["L1"]["csa"].append({"core": 3, "start": "0x40000000", "size": "0x100"})  # ECUForge: no value
     m["verification"] = policy
     f = tmp_path / "m.json"
     f.write_text(json.dumps(m))

@@ -9,7 +9,7 @@ set -eu
 P=${TC_PREFIX:-tricore-elf-}
 HERE=$(cd "$(dirname "$0")" && pwd)
 TC_ROOT=$(cd "$(dirname "$(command -v "${P}gcc")")/.." && pwd)
-MAP="-ffile-prefix-map=$HERE=/usr/src/rea-auto-fixture -fdebug-prefix-map=$HERE=/usr/src/rea-auto-fixture \
+MAP="-ffile-prefix-map=$HERE=/usr/src/ecuforge-fixture -fdebug-prefix-map=$HERE=/usr/src/ecuforge-fixture \
  -ffile-prefix-map=$TC_ROOT=/usr/lib/tricore-toolchain -fdebug-prefix-map=$TC_ROOT=/usr/lib/tricore-toolchain"
 CFLAGS="-O1 -g -mcpu=tc39xx -ffreestanding -ffunction-sections -fdata-sections -fno-common $MAP"
 cd "$HERE"

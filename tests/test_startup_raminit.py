@@ -3,7 +3,7 @@ import json
 import struct
 
 from conftest import find, has
-from reauto.analyze import open_project, run_all
+from ecuforge.analyze import open_project, run_all
 
 
 def _gnu(gen, **kw):

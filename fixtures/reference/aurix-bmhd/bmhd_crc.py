@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute CRC_BMHD / CRC_BMHD_N for this fixture, independently of rea-auto.
+"""Compute CRC_BMHD / CRC_BMHD_N for this fixture, independently of ECUForge.
 
 Method (Infineon AP32381 V1.4, CRC algorithm): CRC-32 with the IEEE 802.3
 polynomial, bit-reflected and inverted, over 2 words (BMI|BMHDID, STAD), each

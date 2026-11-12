@@ -3,10 +3,10 @@ ELF32 (EM_TRICORE), Intel HEX + S19 (with post-build UCB BMHD and a CRC block),
 HighTec/GNU map, TASKING map + LSL, and an A2L with deliberate defects.
 
 Synthetic on purpose: no employer or customer artefacts. Ground truth comes from
-this generator, not from rea-auto. Hardware values the shipped profiles leave
+this generator, not from ECUForge. Hardware values the shipped profiles leave
 unknown are filled in a separate synthetic profile whose facts are all marked
 verification="synthetic"; they are test data, not claims about real silicon.
-The BMHD CRC is computed here independently of rea-auto with the method from
+The BMHD CRC is computed here independently of ECUForge with the method from
 Infineon AP32381 V1.4 (CRC-32 IEEE, reflected, inverted, 32-bit words big-endian),
 which equals zlib.crc32 over the word-swapped header.
 """
@@ -355,7 +355,7 @@ section_layout ::linear
 
 
 A2L = r'''ASAP2_VERSION 1 71
-/begin PROJECT Synthetic "rea-auto fixture"
+/begin PROJECT Synthetic "ECUForge fixture"
  /begin MODULE ECU "synthetic TC38x"
   /begin MOD_COMMON "" BYTE_ORDER MSB_LAST ALIGNMENT_BYTE 1 /end MOD_COMMON
   /begin MOD_PAR ""
@@ -393,9 +393,9 @@ def write_synthetic_profile(path: Path) -> None:
     """Shipped TC38x profile with every unknown (null) fact filled by a synthetic value."""
     import json
     root = Path(__file__).resolve().parents[2]
-    prof = json.loads((root / "reauto/silicon/infineon/aurix/targets/tc38x.json").read_text())
+    prof = json.loads((root / "ecuforge/silicon/infineon/aurix/targets/tc38x.json").read_text())
     prof["id"] += ".synthetic"
-    prof["sources"]["SYNTHETIC"] = {"vendor": "rea-auto tests", "document": "synthetic fixture values", "tier": "synthetic"}
+    prof["sources"]["SYNTHETIC"] = {"vendor": "ECUForge tests", "document": "synthetic fixture values", "tier": "synthetic"}
     syn = lambda v, ref: {"value": v, "source": "SYNTHETIC", "ref": ref, "verification": "synthetic"}
     for c, base in zip(prof["cpus"], (0x70000000, 0x60000000, 0x50000000, 0x40000000)):
         c["dspr"]["base"] = c["dspr"]["base"] or syn(base, "test DSPR base")

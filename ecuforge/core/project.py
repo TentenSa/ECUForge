@@ -229,7 +229,7 @@ class Project:
     def run_record(self) -> dict:
         from .. import __version__
         return {
-            "tool": {"name": "rea-auto", "version": __version__},
+            "tool": {"name": "ecuforge", "version": __version__},
             "target": {"architecture": self.profile.data.get("architecture", "tricore"), "silicon": self.profile.id},
             "profile": self.profile.describe(),
             "architecture_spec": {"id": self.arch.data["id"], "sha256": self.arch.artifact.sha256},

@@ -1,6 +1,6 @@
 """Synthetic class: maps, address-space views and conflicting evidence (L0/L1)."""
 from conftest import find, has
-from reauto.analyze import open_project, run_all
+from ecuforge.analyze import open_project, run_all
 
 
 def test_gnu_map(gen):
@@ -65,9 +65,9 @@ def test_levels(gen):
 
 def test_views_are_typed_and_not_mixed():
     import pytest
-    from reauto.core.views import ImageMemoryRegion, LinkerMemoryRegion, PhysicalMemoryRegion, relate_complete, \
+    from ecuforge.core.views import ImageMemoryRegion, LinkerMemoryRegion, PhysicalMemoryRegion, relate_complete, \
         relate_physical
-    from reauto.silicon.infineon.aurix.profile import DeviceProfile
+    from ecuforge.silicon.infineon.aurix.profile import DeviceProfile
     phys = PhysicalMemoryRegion("physical", "P", 0x1000, 0x100)
     link = LinkerMemoryRegion("linker-region", "L", 0x1000, 0x80)
     img = ImageMemoryRegion("image", "I", 0x1000, 0x10)

@@ -1,4 +1,6 @@
-# rea-auto
+# ECUForge
+
+ECUForge is an independent Python implementation for automotive embedded firmware, derived from the evidence-first design of [REA](https://github.com/morluto/rea) (MIT). It shares no code with REA and is not affiliated with its maintainers.
 
 Evidence-first analysis of automotive embedded firmware builds. First target: TriCore / Infineon AURIX TC3xx with GNU (HighTec, tricore-gcc) and TASKING toolchains.
 
@@ -6,9 +8,9 @@ Status: **0.1.1a1, alpha.** Scored on synthetic fixtures; a reference-firmware f
 
 ## Project provenance boundary
 
-rea-auto is developed from publicly available specifications, redistributable public artifacts, synthetic test fixtures, and artifacts contributed by their owners with appropriate rights. Proprietary employer, customer or third-party firmware, configuration, symbols, documentation and implementation details must not be used as repository source material.
+ECUForge is developed from publicly available specifications, redistributable public artifacts, synthetic test fixtures, and artifacts contributed by their owners with appropriate rights. Proprietary employer, customer or third-party firmware, configuration, symbols, documentation and implementation details must not be used as repository source material.
 
-rea-auto analyses artifacts its users supply and are entitled to analyse. The repository ships no proprietary firmware, calibration data, linker configuration, security material or project-derived datasets; public tests use synthetic, authored or explicitly redistributable artifacts with recorded provenance. See [CONTRIBUTING.md](CONTRIBUTING.md).
+ECUForge analyses artifacts its users supply and are entitled to analyse. The repository ships no proprietary firmware, calibration data, linker configuration, security material or project-derived datasets; public tests use synthetic, authored or explicitly redistributable artifacts with recorded provenance. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What 0.1.x covers
 
@@ -35,8 +37,8 @@ Each source records its type (ELF, HEX, S19, MAP, LSL, A2L, MCU_PROFILE, ARCH_SP
 
 ## Target descriptions
 
-* `reauto/silicon/infineon/aurix/targets/tc37x|tc38x|tc39x.json`: every value is cited (vendor, document, revision, date, URL, table or section) or `null`. Current sources: Infineon AP32381 V1.4 (BMHD slots, layout, BMI, CRC method), Infineon TC3x C4C variants addendum v1.0 (DSPR/PSPR sizes per CPU, flash sizes), TASKING KB 564 (CPU0/CPU1 DSPR SRI base, core-local DSPR alias). Flash bases, CPU2+ DSPR bases, PSPR bases and cached/non-cached aliasing are `null` until a public document is checked.
-* `reauto/architecture/tricore/tricore.json`: CSA size and alignment, trap classes, trap vector spacing. BTV/BIV/stack alignment are `null`, so those checks report unknown.
+* `ecuforge/silicon/infineon/aurix/targets/tc37x|tc38x|tc39x.json`: every value is cited (vendor, document, revision, date, URL, table or section) or `null`. Current sources: Infineon AP32381 V1.4 (BMHD slots, layout, BMI, CRC method), Infineon TC3x C4C variants addendum v1.0 (DSPR/PSPR sizes per CPU, flash sizes), TASKING KB 564 (CPU0/CPU1 DSPR SRI base, core-local DSPR alias). Flash bases, CPU2+ DSPR bases, PSPR bases and cached/non-cached aliasing are `null` until a public document is checked.
+* `ecuforge/architecture/tricore/tricore.json`: CSA size and alignment, trap classes, trap vector spacing. BTV/BIV/stack alignment are `null`, so those checks report unknown.
 
 A `null` fact never becomes a default. Analyses that need it say so.
 
@@ -64,13 +66,13 @@ The core is dependency-light, not dependency-free by rule. DWARF, demangling and
 ## CLI
 
 ```
-rea-auto analyze --image app.hex --elf app.elf --map app.map --device tc38x -o out/
-rea-auto analyze --image app.s19 --map app.map --lsl app.lsl --toolchain tasking -o out/
-rea-auto findings ... [--topic startup] [--level L1] [--kind conflict] [--json]
-rea-auto linker-draft ...
-rea-auto lookup 0x70008000 ...
-rea-auto verify manifest.json [-o run.json]
-rea-auto profiles
+ecuforge analyze --image app.hex --elf app.elf --map app.map --device tc38x -o out/
+ecuforge analyze --image app.s19 --map app.map --lsl app.lsl --toolchain tasking -o out/
+ecuforge findings ... [--topic startup] [--level L1] [--kind conflict] [--json]
+ecuforge linker-draft ...
+ecuforge lookup 0x70008000 ...
+ecuforge verify manifest.json [-o run.json]
+ecuforge profiles
 ```
 
 `analyze` writes `report.md`, `evidence.json`, `run.json` (tool version, target, profile id/version/SHA-256, artifact SHA-256s, options) and `linker_draft.ld`. It exits non-zero when any error finding exists.
@@ -78,21 +80,21 @@ rea-auto profiles
 ## MCP server
 
 ```
-claude mcp add rea-auto -- python -m reauto.mcp_server
+claude mcp add ecuforge -- python -m ecuforge.mcp_server
 ```
 
 Tools: `open_build`, `analyze`, `get_findings`, `get_evidence`, `lookup`, `read_memory`, `linker_draft`, `report`, `verify_manifest`, `list_profiles`.
 
 ## Fixtures and scoring
 
-Fixture classes: synthetic, public (license permitting), reference firmware, fuzz seeds. Each fixture directory carries a `provenance.yaml` with per-file SHA-256; `scripts/check_repo.py` enforces it and blocks build artifacts anywhere else. `rea-auto verify` scores every expected fact as correct, unknown, conflict or false claim; a false claim is the most serious result. See [fixtures/README.md](fixtures/README.md) and [docs/fixtures.md](docs/fixtures.md).
+Fixture classes: synthetic, public (license permitting), reference firmware, fuzz seeds. Each fixture directory carries a `provenance.yaml` with per-file SHA-256; `scripts/check_repo.py` enforces it and blocks build artifacts anywhere else. `ecuforge verify` scores every expected fact as correct, unknown, conflict or false claim; a false claim is the most serious result. See [fixtures/README.md](fixtures/README.md) and [docs/fixtures.md](docs/fixtures.md).
 
 Parsers never drop input silently: anything not understood becomes a parse event with file and line, kept in `evidence.json`. Findings come from parse health (what the input announces vs what was recovered), at most one per consequence per artifact; e.g. a map that announces output sections but yields none is `MAP_STRUCTURE_NOT_RECOVERED`.
 
 ## Layout
 
 ```
-reauto/
+ecuforge/
   core/          evidence, project, views, layout, raminit, symbols
   formats/       elf, hexrec, image, map/model, a2l/parser
   architecture/  tricore/ (spec facts, startup structures)

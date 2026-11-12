@@ -1,8 +1,8 @@
-# Contributing to rea-auto
+# Contributing to ECUForge
 
 ## Provenance boundary
 
-rea-auto is developed from publicly available specifications, redistributable public artifacts, synthetic test fixtures, and artifacts contributed by their owners with appropriate rights. Proprietary employer, customer or third-party firmware, configuration, symbols, documentation and implementation details must not be used as repository source material.
+ECUForge is developed from publicly available specifications, redistributable public artifacts, synthetic test fixtures, and artifacts contributed by their owners with appropriate rights. Proprietary employer, customer or third-party firmware, configuration, symbols, documentation and implementation details must not be used as repository source material.
 
 ### Do not submit
 
@@ -22,7 +22,7 @@ Renaming symbols or removing a customer name does not make an artifact publishab
 
 | Acceptable | Not acceptable |
 |---|---|
-| A public document states that X is at Y (cite it in a profile or spec fact). | "Several programs I worked on put X at Y, so rea-auto assumes Y." |
+| A public document states that X is at Y (cite it in a profile or spec fact). | "Several programs I worked on put X at Y, so ECUForge assumes Y." |
 | Y is discovered at runtime from an ELF or map the user supplies. | A constant learned only from a non-public build. |
 | A defect seen on a non-public build is reproduced with an invented synthetic fixture. | Committing the non-public build, or a reduced copy of it. |
 
@@ -30,11 +30,11 @@ Engineering experience may guide what problems to solve and how to design algori
 
 ### Security scope
 
-rea-auto reports evidence for authorized analysis, research, interoperability and defensive assessment (for example: "this region participates in boot authentication"). It does not ship mechanisms to defeat vehicle security, such as key extraction, signature bypass or immobilizer defeat.
+ECUForge reports evidence for authorized analysis, research, interoperability and defensive assessment (for example: "this region participates in boot authentication"). It does not ship mechanisms to defeat vehicle security, such as key extraction, signature bypass or immobilizer defeat.
 
 ## Technical rules
 
-- **Hardware and architecture facts** live in `reauto/silicon/**/targets/*.json` and `reauto/architecture/**/*.json` as fact objects with `source`, `ref` and `verification`; the source names vendor, document, revision, date and a public URL. Unknown is `null`, never an estimate. Analysis code holds no unexplained hardware constants (`tests/test_rules.py`).
+- **Hardware and architecture facts** live in `ecuforge/silicon/**/targets/*.json` and `ecuforge/architecture/**/*.json` as fact objects with `source`, `ref` and `verification`; the source names vendor, document, revision, date and a public URL. Unknown is `null`, never an estimate. Analysis code holds no unexplained hardware constants (`tests/test_rules.py`).
 - **Parsers never manufacture certainty.** Anything not understood becomes a `ParseEvent` with file and line; nothing is dropped silently. Severity never depends on parser state alone: parsers report `ParseHealth` (announced vs recovered structures), and findings are derived from it. When two sources disagree the result is a `CONFLICT` with both claims, never whichever parser ran last.
 - **Normalise below the analyzers.** Toolchain differences are translated by the toolchain plug-in into the common model. Analyzers in `core/`, `architecture/`, `silicon/` and `semantics/` never branch on a toolchain name (`tests/test_rules.py`).
 - **Physical, linker and image memory are separate views.** None overrides another.
@@ -43,12 +43,12 @@ rea-auto reports evidence for authorized analysis, research, interoperability an
 ## Layering
 
 ```
-reauto/core/            evidence, views, layout, RAM-init analysis
-reauto/formats/         ELF, HEX, S-record, map model, A2L, parse events
-reauto/architecture/    CPU architecture facts and structures
-reauto/silicon/         device facts and boot structures
-reauto/toolchains/      map/LSL parsers, linker-generated tables, symbol conventions
-reauto/semantics/       L2 recovery (experimental in 0.1.x)
+ecuforge/core/            evidence, views, layout, RAM-init analysis
+ecuforge/formats/         ELF, HEX, S-record, map model, A2L, parse events
+ecuforge/architecture/    CPU architecture facts and structures
+ecuforge/silicon/         device facts and boot structures
+ecuforge/toolchains/      map/LSL parsers, linker-generated tables, symbol conventions
+ecuforge/semantics/       L2 recovery (experimental in 0.1.x)
 ```
 
 ## Contributor declaration

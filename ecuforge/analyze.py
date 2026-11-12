@@ -55,8 +55,8 @@ def _h(v):
 def render_markdown(p: Project, res: dict, max_rows: int = 200) -> str:
     st, s = p.store, p.store.summary()
     run = res["run"]
-    o = ["# rea-auto analysis report", "",
-         f"rea-auto {run['tool']['version']} | target {run['target']['architecture']} / {run['target']['silicon']} "
+    o = ["# ECUForge analysis report", "",
+         f"ECUForge {run['tool']['version']} | target {run['target']['architecture']} / {run['target']['silicon']} "
          f"(profile v{run['profile']['version']}, sha256 {run['profile']['sha256'][:12]}, "
          f"{run['profile']['unknown_facts']} facts unknown) | options {run['analysis']['options']}", "",
          "## Inputs", "| Type | File | SHA-256 | Parser |", "|---|---|---|---|"]

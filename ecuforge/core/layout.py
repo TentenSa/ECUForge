@@ -268,7 +268,7 @@ def _uncovered(start, size, loads):
 def linker_draft(p, lay: Layout) -> str:
     """GNU-LD style MEMORY{} + placement skeleton from evidence. A draft for review:
     alignment, KEEP() and input ordering are not recoverable from a map alone."""
-    out = ["/* Linker layout draft reconstructed by rea-auto - review before use.",
+    out = ["/* Linker layout draft reconstructed by ECUForge - review before use.",
            f" * profile {p.profile.id}; evidence ids in comments. */", "", "MEMORY", "{"]
     for r in lay.regions:
         out.append(f"  {r.name:<16} : ORIGIN = {r.origin:#010x}, LENGTH = {r.length:#x}"

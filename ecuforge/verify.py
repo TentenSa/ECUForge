@@ -1,16 +1,16 @@
-"""Score rea-auto against a fixture manifest of independently known facts.
+"""Score ECUForge against a fixture manifest of independently known facts.
 
 Every expected fact ends in exactly one category:
-  correct           rea-auto reports the expected value
-  expected_unknown  rea-auto reports no value, and the manifest lists this fact under
+  correct           ECUForge reports the expected value
+  expected_unknown  ECUForge reports no value, and the manifest lists this fact under
                     verification.expected_unknowns with an id and a reason
-  unknown           rea-auto reports no value, not listed as expected
-  conflict          rea-auto reports contradictory evidence about this item
-  false_claim       rea-auto confidently reports a different value  (most serious)
+  unknown           ECUForge reports no value, not listed as expected
+  conflict          ECUForge reports contradictory evidence about this item
+  false_claim       ECUForge confidently reports a different value  (most serious)
 
-The manifest's expected values must come from a source independent of rea-auto:
+The manifest's expected values must come from a source independent of ECUForge:
 the reference firmware's own source and linker script, a vendor dump tool, or
-the generator of a synthetic fixture. Errors or conflicts rea-auto raises that
+the generator of a synthetic fixture. Errors or conflicts ECUForge raises that
 the manifest does not list in `allowed_findings` are reported as unexplained.
 
 Policy (manifest `verification` block):
@@ -217,7 +217,7 @@ def render(vr: VerifyResult, name) -> str:
     o.append("")
     for c in sorted(vr.checks, key=lambda c: CATEGORIES.index(c.category), reverse=True):
         if c.category != "correct":
-            o.append(f"{c.category.upper():12} {c.level} {c.what}: expected {_fmt(c.expected)}, rea-auto {_fmt(c.actual)}")
+            o.append(f"{c.category.upper():12} {c.level} {c.what}: expected {_fmt(c.expected)}, ECUForge {_fmt(c.actual)}")
     for u in vr.unexplained:
         o.append(f"UNEXPLAINED  {u}")
     for i in vr.expected_unknowns_recovered:

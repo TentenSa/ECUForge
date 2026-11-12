@@ -1,5 +1,5 @@
 """GNU map output-section header variants, detected by syntax (not tool version)."""
-from reauto.toolchains.gnu.map import parse_gnu_map
+from ecuforge.toolchains.gnu.map import parse_gnu_map
 
 HEAD = """Memory Configuration
 

@@ -3,9 +3,9 @@ analyzers, no unexplained hardware constants in analysis code."""
 import re
 
 from conftest import ROOT
-from reauto.analyze import open_project
+from ecuforge.analyze import open_project
 
-PKG = ROOT / "reauto"
+PKG = ROOT / "ecuforge"
 
 
 def test_events_are_telemetry_findings_are_aggregate(gen, tmp_path):

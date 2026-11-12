@@ -3,9 +3,9 @@ artifacts:
   - name: README.md
     sha256: 905624a6b7950a2300ceb86b7d78d82c76963dc93020137f4eb604396e67afb3
   - name: bmhd_crc.py
-    sha256: 3ccdb84192dbb143ebc07d86aab5bc66c397bbc04ebd2e42eff0bae1d8e5f796
+    sha256: fbfacf0d7a5ae3602ecc2bd8db7cfebf5a73d03cabb0fc17d8a1a79e81fd0b87
   - name: build_gnu.sh
-    sha256: 56802a66e3840845c3d57e1e92ec305e8e091a10cc590944f342d9e700157439
+    sha256: f8a3868b39d624d71868b243f6fab1136db30806c174be794540f55067a150a8
   - name: check_reproducible.sh
     sha256: 9e4bcb31d95ae44f7e802e702ce3138274c526584255251958735ab56f0d4e22
   - name: link_gnu.ld
@@ -13,7 +13,7 @@ artifacts:
   - name: manifest.json
     sha256: d85d3003c3b4c3d4a474aa02804899d39d26d629cf5545c2c7f05ac0fb85d912
   - name: out/reference.elf
-    sha256: 5536e520fd96669ceb543e3bc0e89ebbe9f8360dc32046cfa596c011bdc634af
+    sha256: f3a18399e4f5ce04ad93a66b3a6669604a573f20ea42c0f83282bc7cc4d3a45c
   - name: out/reference.hex
     sha256: 8e11b27ce7e61f9c7ade69d9a3805bbe0a57f914d050d44b10205898c9077d43
   - name: out/reference.map

@@ -1,11 +1,11 @@
 schema_version: 1
 artifacts:
   - name: README.md
-    sha256: 25cfb5d08be6c025a69486573b90b97fd36d0796277794eab6a95ea70d3979bb
+    sha256: 8c823d2b88838cca77c45cdd38a3e67d8775f345c91d42e04568cef33abdb3c5
   - name: TOOLCHAIN.md
     sha256: fde8a972e063541146bb5c155f963813a06c8369a298289914a7ac200dc6e8e9
   - name: build_gnu.sh
-    sha256: 7750ac1342f696300f0fdb23f835155414d2fe2877ae55b51d3d801bbec5ed7e
+    sha256: a6057ce553c96452fed617c345df852b729ff6e965a6ca5af767c468f193216e
   - name: check_reproducible.sh
     sha256: 12d728fcbba8a8cfe5f7ed7fce74623925d7a4f4c3c452c26b059c6b69d3fbe7
   - name: link_gnu.ld
@@ -13,7 +13,7 @@ artifacts:
   - name: manifest.json
     sha256: a0d297b437459bbe58994e0f5e6bdd51f3233063a103ac5c3bc8ab8657cc2783
   - name: out/reference.elf
-    sha256: 8d8c767bdb527c0cdaeb40a95c37a582d643eb36766b2193a942598f8b57dfe7
+    sha256: 7b0a2ebd614af6fa546250345f1038ef58dd4dd4aedbe66a95bdef09270dd451
   - name: out/reference.hex
     sha256: 3620436e6efdb6f147f1720770cda37c95bcadbdb1169185d1f0e601e82f5936
   - name: out/reference.map
@@ -21,7 +21,7 @@ artifacts:
   - name: out/reference.readelf.txt
     sha256: 5d31d9bbae4403b2c79c1d65a06219c7ff5d6eee158ee4977877ebe209e10ee1
   - name: src/main.c
-    sha256: 75250bf5ece7fa76b2102df70f43167e0a35b5effbf601c628f8aa65d228a95d
+    sha256: cc8fe706c4f02d998384f20f30585597be8feeed180cd61754b333a69b10e61e
   - name: src/start.c
     sha256: 79d3b5429a2501e98b012043b04bba6f9e99c86346413d297edcb6b6a12b3848
 origin:

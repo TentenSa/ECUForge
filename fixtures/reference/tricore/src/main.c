@@ -1,7 +1,7 @@
-/* rea-auto reference firmware (fixture class C).
+/* ECUForge reference firmware (fixture class C).
  * Every object here exists to produce one known structure in the image.
  * Placement is fixed by ../link_gnu.ld, so the expected facts come from this
- * source and that linker script, not from rea-auto. */
+ * source and that linker script, not from ECUForge. */
 #include <stdint.h>
 
 /* Explicit input-section names: placement must not depend on how a particular
