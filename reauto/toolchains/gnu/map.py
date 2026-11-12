@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ...formats.events import ParseEvent
+from ...formats.events import ParseEvent, health_from
 from ...formats.map.model import InputSection, LinkMap, MapSymbol, MemoryRegion, OutputSection
 
 H = r"0x[0-9a-fA-F]+"
@@ -43,7 +43,9 @@ SKIP_HEADS = ("LOAD ", "OUTPUT(", "START GROUP", "END GROUP", "OUTPUT_FORMAT", "
 
 def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
     lm = LinkMap("gnu", artifact)
-    lines = Path(path).read_text(errors="replace").splitlines()
+    text = Path(path).read_text(errors="replace")
+    lines = text.splitlines()
+    announced: dict = {}
     mode = "pre"
     cur_out: OutputSection | None = None
     cur_in: InputSection | None = None
@@ -53,9 +55,11 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
     for ln, line in enumerate(lines, 1):
         s = line.strip()
         if s == "Memory Configuration":
+            announced["memory_table"] = ln
             mode = "mem"
             continue
         if s == "Linker script and memory map":
+            announced["output_sections"] = ln
             mode = "map"
             continue
         if s.startswith("Discarded input sections") or s.startswith("Allocating common symbols"):
@@ -71,7 +75,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 lm.regions.append(MemoryRegion(m.group(1), int(m.group(2), 16), int(m.group(3), 16),
                                                m.group(4) or "", ln, mem_type=_mem_type(m.group(4) or "")))
             elif s and not s.startswith("Name") and not s.startswith("*default*"):
-                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, True, "memory table"))
+                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, "memory table"))
             continue
         if mode != "map":
             continue
@@ -90,7 +94,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
             else:
                 lm.events.append(ParseEvent("INCOMPLETE_ENTRY", pending_out["line"],
                                             f"output section header not followed by address/size: "
-                                            f"{pending_out['name']} (next line {ln}: {s[:60]})", True, "memory map"))
+                                            f"{pending_out['name']} (next line {ln}: {s[:60]})", "memory map"))
             pending_out = None
         if pending_in:
             m = RE_IN_CONT.match(line)
@@ -101,7 +105,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 pending_in = None
                 continue
             lm.events.append(ParseEvent("INCOMPLETE_ENTRY", pending_in[1],
-                                        f"input section name without address/size: {pending_in[0]}", True, _ctx(cur_out)))
+                                        f"input section name without address/size: {pending_in[0]}", _ctx(cur_out)))
             pending_in = None
 
         if not line or line.startswith(SKIP_HEADS):
@@ -117,7 +121,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 pending_out = {"name": m.group("name"), "line": ln, "region": m.group("region"),
                                "lma": m.group("lma")}
             else:
-                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, cur_out is not None, _ctx(cur_out)))
+                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, _ctx(cur_out)))
             continue
 
         # ---- input section (single leading space) -------------------
@@ -134,7 +138,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
             if m:
                 pending_in = (m.group(1), ln)
             else:
-                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, cur_out is not None, _ctx(cur_out)))
+                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, _ctx(cur_out)))
             continue
 
         # ---- symbol / assignment / data statement ---------------------
@@ -153,16 +157,20 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                     lm.symbols.append(MapSymbol(a.group(1), addr, cur_out.name if cur_out else None,
                                                 None, None, ln, assignment=True))
                 else:
-                    lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, cur_out is not None, _ctx(cur_out)))
+                    lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, _ctx(cur_out)))
             elif re.fullmatch(r"[A-Za-z_.$][\w.$@]*", rest):
                 lm.symbols.append(MapSymbol(rest, addr, cur_out.name if cur_out else None,
                                             cur_in.obj if cur_in else None, None, ln))
             else:
-                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, cur_out is not None, _ctx(cur_out)))
+                lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, _ctx(cur_out)))
             continue
-        lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, cur_out is not None, _ctx(cur_out)))
+        lm.events.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, s, _ctx(cur_out)))
     if pending_out:  # header at end of file without address: empty output section
         lm.empty_sections.append((pending_out["name"], pending_out["line"]))
+    lm.health = health_from(text, lm.events,
+                            len(lm.regions) + len(lm.sections) + sum(len(x.inputs) for x in lm.sections) + len(lm.symbols),
+                            announced, {"memory_table": len(lm.regions),
+                                        "output_sections": len(lm.sections) + len(lm.empty_sections)})
     return lm
 
 

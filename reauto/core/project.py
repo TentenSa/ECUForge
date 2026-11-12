@@ -80,7 +80,11 @@ class Project:
         problems: list = []
         (load_ihex if kind == "hex" else load_srec)(path, art.short, self.image, problems)
         self.image_artifacts.append(art)
-        self._record_events(art, problems)
+        from ..formats.events import health_from
+        text = Path(path).read_text(errors="replace")
+        self._record_parse(art, problems, health_from(text, problems, self.image.stats.get("accepted_records", 0),
+                                                      {"records": 1},
+                                                      {"records": self.image.stats.get("accepted_records", 0)}))
         self.store.add("input", "observed", "info",
                        f"{art.type} image: {len(self.image.segments)} contiguous segment(s), {self.image.size} bytes",
                        [Source(art.short, "whole file")],
@@ -108,7 +112,7 @@ class Project:
         tc = toolchain or self.options.toolchain or detect_map_toolchain(path)
         art = self.store.register(Artifact.from_path(path, f"{tc}-map", f"toolchains.{tc}.map"))
         self.map, self.map_art = parse_map(tc, path, art.short), art
-        self._record_events(art, self.map.events)
+        self._record_parse(art, self.map.events, self.map.health)
         self.store.add("input", "observed", "info",
                        f"{tc} map: {len(self.map.regions)} regions, {len(self.map.sections)} output sections, "
                        f"{sum(len(s.inputs) for s in self.map.sections)} input sections, "
@@ -121,7 +125,7 @@ class Project:
         art = self.store.register(Artifact.from_path(path, "lsl", "toolchains.tasking.lsl"))
         self.lsl = parse_lsl(path)
         notes = apply_lsl(self.map, self.lsl) if self.map else []
-        self._record_events(art, self.lsl["events"])
+        self._record_parse(art, self.lsl["events"], self.lsl["health"])
         self.store.add("input", "observed", "info",
                        f"LSL: {len(self.lsl['memories'])} memory declarations, {len(self.lsl['groups'])} groups",
                        [Source(art.short, "whole file")], {"notes": notes})
@@ -131,32 +135,46 @@ class Project:
         from ..formats.a2l.parser import parse_a2l
         art = self.store.register(Artifact.from_path(path, "a2l", "formats.a2l"))
         self.a2l, self.a2l_art = parse_a2l(path), art
-        self._record_events(art, self.a2l.problems)
+        self._record_parse(art, self.a2l.problems, self.a2l.health)
         self.store.add("input", "observed", "info",
                        f"A2L: {len(self.a2l.characteristics)} characteristics, {len(self.a2l.measurements)} "
                        f"measurements, {len(self.a2l.axis_pts)} axis_pts, {len(self.a2l.segments)} memory segments",
                        [Source(art.short, "whole file")], level="L0")
         return art
 
-    def _record_events(self, art: Artifact, events: list) -> None:
-        """Keep every parse event; promote only analysis-affecting ones to UNKNOWN findings."""
+    def _record_parse(self, art: Artifact, events: list, health) -> None:
+        """Keep every parse event (telemetry); derive findings from parse health, never from
+        the parser's local state. At most one finding per consequence per artifact."""
         from dataclasses import asdict
-        affecting = []
         for ev in events:
             self.store.parse_events.append({"artifact": art.short, "sha256": art.sha256, **asdict(ev)})
-            if ev.affects:
-                affecting.append(ev)
-        for ev in affecting:
-            sev = "error" if ev.kind == "REJECTED_RECORD" else "warning"
-            self.store.add("input", "unknown", sev, f"{ev.kind.lower().replace('_', ' ')} in {ev.context}: {ev.raw}",
-                           [Source(art.short, f"line {ev.line}", ev.raw[:120])],
-                           {"line": ev.line, "event": ev.kind}, level="L0")
-        rest = len(events) - len(affecting)
-        if rest:
+        h = asdict(health) if health is not None else {}
+        self.store.parse_health[art.short] = h
+        src = [Source(art.short, "whole file")]
+        lines = lambda kind: [e.line for e in events if e.kind == kind]
+        for struct in (health.missing() if health is not None else []):
+            self.store.add("input", "unknown", "error",
+                           f"{art.type}_STRUCTURE_NOT_RECOVERED: {art.short} announces {struct.replace('_', ' ')} "
+                           f"(line {health.announced[struct]}) but the parser recovered none; "
+                           f"{health.unrecognized_lines} of {health.nonblank_lines} lines remain unclassified",
+                           [Source(art.short, f"line {health.announced[struct]}")],
+                           {"code": f"{art.type}_STRUCTURE_NOT_RECOVERED", "structure": struct, "health": h}, level="L0")
+        for kind, code, sev, what in (
+                ("REJECTED_RECORD", "PARSE_RECORDS_REJECTED", "error", "records rejected; their bytes are UNKNOWN"),
+                ("INCOMPLETE_ENTRY", "PARSE_INCOMPLETE_RECORDS", "warning", "structural records incomplete"),
+                ("UNPARSED_BLOCK", "PARSE_BLOCKS_NOT_PARSED", "warning", "blocks could not be parsed")):
+            ls = lines(kind)
+            if ls:
+                self.store.add("input", "unknown", sev, f"{code}: {len(ls)} {what} in {art.short} "
+                               f"(lines {', '.join(map(str, ls[:10]))}{', ...' if len(ls) > 10 else ''})",
+                               [Source(art.short, f"line {ln}") for ln in ls[:10]],
+                               {"code": code, "lines": ls, "health": h}, level="L0")
+        other = len(lines("UNRECOGNIZED_CONSTRUCT")) + len(lines("UNSUPPORTED_TABLE"))
+        if other:
             self.store.add("input", "observed", "note",
-                           f"{rest} parse events in {art.short} do not affect any analysis; preserved in "
-                           "evidence.json parse_events", [Source(art.short, "whole file")],
-                           {"events": rest}, level="L0")
+                           f"PARSE_LINES_UNCLASSIFIED: {other} lines or tables in {art.short} not modelled; "
+                           "preserved in evidence.json parse_events", src,
+                           {"code": "PARSE_LINES_UNCLASSIFIED", "count": other, "health": h}, level="L0")
 
     # ---- unified symbol view --------------------------------------------------
     def symbols(self) -> dict[str, ResolvedSymbol]:

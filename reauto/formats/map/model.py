@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..events import ParseEvent
+from ..events import ParseEvent, ParseHealth
 
 
 @dataclass
@@ -68,7 +68,8 @@ class LinkMap:
     symbols: list[MapSymbol] = field(default_factory=list)
     # everything the parser did not turn into model data; never dropped (see formats/events.py)
     events: list[ParseEvent] = field(default_factory=list)
-    empty_sections: list[tuple[str, int]] = field(default_factory=list)  # output sections with no address/size
+    empty_sections: list[tuple[str, int]] = field(default_factory=list)
+    health: ParseHealth | None = None  # output sections with no address/size
 
     def symbol(self, name: str) -> MapSymbol | None:
         return next((s for s in self.symbols if s.name == name), None)

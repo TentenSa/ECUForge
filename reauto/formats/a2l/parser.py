@@ -12,7 +12,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..events import ParseEvent
+from ..events import ParseEvent, ParseHealth, health_from
 
 DTYPE = {"UBYTE": (1, "B"), "SBYTE": (1, "b"), "UWORD": (2, "H"), "SWORD": (2, "h"),
          "ULONG": (4, "I"), "SLONG": (4, "i"), "A_UINT64": (8, "Q"), "A_INT64": (8, "q"),
@@ -167,7 +167,8 @@ class A2L:
     layouts: dict[str, RecordLayout] = field(default_factory=dict)
     compu: dict[str, CompuMethod] = field(default_factory=dict)
     segments: list[MemorySegment] = field(default_factory=list)
-    problems: list[tuple[int, str]] = field(default_factory=list)
+    problems: list = field(default_factory=list)  # ParseEvents
+    health: ParseHealth | None = None
 
     def objects(self):
         return self.characteristics + self.measurements + self.axis_pts
@@ -294,8 +295,12 @@ def parse_a2l(path: str | Path) -> A2L:
                 _common(b, o)
                 a2l.axis_pts.append(o)
         except (ValueError, IndexError, TypeError) as e:
-            a2l.problems.append(ParseEvent("UNPARSED_BLOCK", b.line, f"{b.kind}: cannot parse ({e})", True,
+            a2l.problems.append(ParseEvent("UNPARSED_BLOCK", b.line, f"{b.kind}: cannot parse ({e})",
                                            f"/begin {b.kind}"))
+    m = re.search(r"/begin\s+(CHARACTERISTIC|MEASUREMENT|AXIS_PTS)\b", text)
+    announced = {"objects": text[: m.start()].count("\n") + 1} if m else {}
+    a2l.health = health_from(text, a2l.problems, len(a2l.objects()) + len(a2l.segments), announced,
+                             {"objects": len(a2l.objects())}, fatal_kinds=())
     return a2l
 
 

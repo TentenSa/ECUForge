@@ -30,7 +30,7 @@ def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None,
         if not line:
             continue
         if eof:
-            probs.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, line[:80], False, "after end-of-file record"))
+            probs.append(ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, line[:80], "after end-of-file record"))
             continue
         bad = None
         rec = b""
@@ -48,7 +48,7 @@ def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None,
         if bad:
             if first:
                 raise RecordError(f"{path}:{ln}: {bad}")
-            probs.append(ParseEvent("REJECTED_RECORD", ln, f"{bad}: {line[:80]}", True, "record"))
+            probs.append(ParseEvent("REJECTED_RECORD", ln, f"{bad}: {line[:80]}", "record"))
             continue
         first = False
         addr, rtype, data = (rec[1] << 8) | rec[2], rec[3], rec[4:-1]
@@ -64,7 +64,7 @@ def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None,
         elif rtype in (0x03, 0x05):
             img.entry = int.from_bytes(data, "big")
         else:
-            probs.append(ParseEvent("REJECTED_RECORD", ln, f"unknown record type {rtype:#x}: {line[:80]}", True,
+            probs.append(ParseEvent("REJECTED_RECORD", ln, f"unknown record type {rtype:#x}: {line[:80]}",
                                     "record"))
     img.stats = {"accepted_records": accepted, "events": len(probs)}
     return img
@@ -98,7 +98,7 @@ def load_srec(path: str | Path, origin: str, image: MemoryImage | None = None,
         if bad:
             if first:
                 raise RecordError(f"{path}:{ln}: {bad}")
-            probs.append(ParseEvent("REJECTED_RECORD", ln, f"{bad}: {line[:80]}", True, "record"))
+            probs.append(ParseEvent("REJECTED_RECORD", ln, f"{bad}: {line[:80]}", "record"))
             continue
         first = False
         accepted += 1

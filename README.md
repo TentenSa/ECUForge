@@ -87,7 +87,7 @@ Tools: `open_build`, `analyze`, `get_findings`, `get_evidence`, `lookup`, `read_
 
 Fixture classes: synthetic, public (license permitting), reference firmware, fuzz seeds. Each fixture directory carries a `provenance.yaml` with per-file SHA-256; `scripts/check_repo.py` enforces it and blocks build artifacts anywhere else. `rea-auto verify` scores every expected fact as correct, unknown, conflict or false claim; a false claim is the most serious result. See [fixtures/README.md](fixtures/README.md) and [docs/fixtures.md](docs/fixtures.md).
 
-Parsers never drop input silently: anything not understood becomes a parse event with file and line, kept in `evidence.json`. Only events that can change a result become UNKNOWN findings.
+Parsers never drop input silently: anything not understood becomes a parse event with file and line, kept in `evidence.json`. Findings come from parse health (what the input announces vs what was recovered), at most one per consequence per artifact; e.g. a map that announces output sections but yields none is `MAP_STRUCTURE_NOT_RECOVERED`.
 
 ## Layout
 

@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ...formats.events import ParseEvent
+from ...formats.events import ParseEvent, health_from
 from ...formats.map.model import InputSection, LinkMap, MapSymbol, MemoryRegion, OutputSection
 
 RE_IDX = re.compile(r"\s*\(\d+\)\s*$")
@@ -72,7 +72,8 @@ def _col(header: list[str], *names: str) -> int | None:
 
 def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
     lm = LinkMap("tasking", artifact)
-    lines = Path(path).read_text(errors="replace").splitlines()
+    text = Path(path).read_text(errors="replace")
+    lines = text.splitlines()
     out_to_obj: dict[str, tuple[str, str, int, int]] = {}
     chip_base: dict[str, int] = {}
     chip_extent: dict[str, int] = {}
@@ -133,7 +134,7 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
             pass
         else:
             lm.events.append(ParseEvent("UNSUPPORTED_TABLE", rows[0][0] - 2 if rows else 0,
-                                        "unsupported table: " + " | ".join(header), False,
+                                        "unsupported table: " + " | ".join(header),
                                         "table not used by any analysis"))
             continue
         if h and h[0] == "memory" and "total" in h:
@@ -153,6 +154,15 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
     for sec in lm.sections:
         if sec.name in load_copies:
             sec.lma = load_copies[sec.name][0]
+    announced = {}
+    for i, l in enumerate(lines, 1):
+        t = l.strip().lower()
+        if "locate result" in t or "section summary" in t:
+            announced.setdefault("located_sections", i)
+        if t.startswith("* symbols") or t.startswith("symbols (sorted"):
+            announced.setdefault("symbols", i)
+    lm.health = health_from(text, lm.events, len(lm.regions) + len(lm.sections) + len(lm.symbols), announced,
+                            {"located_sections": len(lm.sections), "symbols": len(lm.symbols)})
     # attach section symbols
     for s in lm.symbols:
         sec = lm.section_of(s.addr)
@@ -211,9 +221,12 @@ def parse_lsl(path: str | Path) -> dict:
             "load_addr": (re.search(r"load_addr\s*=\s*([^,)]+)", attrs) or [None, None])[1],
             "selects": re.findall(r'select\s+"([^"]+)"', g.group(3)),
         })
-    return {"defines": defs, "memories": memories, "groups": groups,
-            "events": [ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, raw, True, "LSL top level")
-                       for ln, raw in _lsl_unsupported(clean)]}
+    events = [ParseEvent("UNRECOGNIZED_CONSTRUCT", ln, raw, "LSL top level") for ln, raw in _lsl_unsupported(clean)]
+    m = re.search(r"^\s*memory\s+\w+", clean, re.M)
+    announced = {"memory_declarations": clean[: m.start()].count("\n") + 1} if m else {}
+    health = health_from(text, events, len(memories) + len(groups), announced,
+                         {"memory_declarations": len(memories)})
+    return {"defines": defs, "memories": memories, "groups": groups, "events": events, "health": health}
 
 
 LSL_KNOWN = {"memory", "section_layout", "group", "select", "architecture", "derivative", "processor", "bus",
