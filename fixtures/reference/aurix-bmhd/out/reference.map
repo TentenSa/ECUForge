@@ -1,0 +1,63 @@
+
+Discarded input sections
+
+ .text          0x00000000        0x0 out/bmhd.o
+ .data          0x00000000        0x0 out/bmhd.o
+ .bss           0x00000000        0x0 out/bmhd.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+pfls0            0x80000000         0x00010000         xr
+ucb_bmhd0        0xaf400000         0x00000200         r
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD out/bmhd.o
+
+.startup        memory region -> pfls0
+                0x80000020        0x4
+ *(.startup)
+ .startup       0x80000020        0x4 out/bmhd.o
+                0x80000020                _START
+
+.bmhd_0_orig    memory region -> ucb_bmhd0
+                0xaf400000      0x200
+ *(.bmhd_0_orig)
+ .bmhd_0_orig   0xaf400000      0x200 out/bmhd.o
+                0xaf400000                bmhd_0_orig
+
+/DISCARD/
+ *(.data .data.* .bss .bss.* .text .text.* .rodata .rodata.*)
+OUTPUT(out/reference.elf elf32-tricore)
+
+.debug_info     memory region -> *default*
+                0x00000000      0x212
+ .debug_info    0x00000000      0x212 out/bmhd.o
+
+.debug_abbrev   memory region -> *default*
+                0x00000000       0x97
+ .debug_abbrev  0x00000000       0x97 out/bmhd.o
+
+.debug_aranges  memory region -> *default*
+                0x00000000       0x18
+ .debug_aranges
+                0x00000000       0x18 out/bmhd.o
+
+.debug_line     memory region -> *default*
+                0x00000000       0x79
+ .debug_line    0x00000000       0x79 out/bmhd.o
+
+.debug_str      memory region -> *default*
+                0x00000000        0x0
+ .debug_str     0x00000000        0x0 out/bmhd.o
+
+.comment        memory region -> *default*
+                0x00000000       0x2d
+ .comment       0x00000000       0x2d out/bmhd.o
+                                 0x2e (size before relaxing)
+
+.callinfo       memory region -> *default*
+                0x00000000        0x0
+ .callinfo      0x00000000        0x0 out/bmhd.o

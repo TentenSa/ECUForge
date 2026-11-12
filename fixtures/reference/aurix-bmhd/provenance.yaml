@@ -1,0 +1,43 @@
+schema_version: 1
+artifacts:
+  - name: README.md
+    sha256: 905624a6b7950a2300ceb86b7d78d82c76963dc93020137f4eb604396e67afb3
+  - name: bmhd_crc.py
+    sha256: 3ccdb84192dbb143ebc07d86aab5bc66c397bbc04ebd2e42eff0bae1d8e5f796
+  - name: build_gnu.sh
+    sha256: 56802a66e3840845c3d57e1e92ec305e8e091a10cc590944f342d9e700157439
+  - name: check_reproducible.sh
+    sha256: 9e4bcb31d95ae44f7e802e702ce3138274c526584255251958735ab56f0d4e22
+  - name: link_gnu.ld
+    sha256: 8d81cdfbf15ee877b3117afa5b23883a7e385af09e5ecd797ebc96364326a1dc
+  - name: manifest.json
+    sha256: d85d3003c3b4c3d4a474aa02804899d39d26d629cf5545c2c7f05ac0fb85d912
+  - name: out/reference.elf
+    sha256: 5536e520fd96669ceb543e3bc0e89ebbe9f8360dc32046cfa596c011bdc634af
+  - name: out/reference.hex
+    sha256: 8e11b27ce7e61f9c7ade69d9a3805bbe0a57f914d050d44b10205898c9077d43
+  - name: out/reference.map
+    sha256: a1f1f05047af51646439fc34e78e1a4b872c3550336e959d872f969f4541bfb7
+  - name: out/reference.readelf.txt
+    sha256: dc0f8f1b8262c626f9672e23df183a7966312a68f670e8f5a2a75230394e1be2
+  - name: src/bmhd.c
+    sha256: b4d8d5f15ebb02ed41076394732746fb50d979ce991f38c48af8fbfdbb248ddc
+origin:
+  type: authored
+  note: Reference fixture written for this project. BMHD field layout and CRC method from Infineon AP32381 V1.4; all values are the fixture's own. out/ is produced by build_gnu.sh and is reproducible (check_reproducible.sh).
+  prebuild_sha256:
+    manifest.json: d85d3003c3b4c3d4a474aa02804899d39d26d629cf5545c2c7f05ac0fb85d912
+    src/bmhd.c: b4d8d5f15ebb02ed41076394732746fb50d979ce991f38c48af8fbfdbb248ddc
+    link_gnu.ld: 8d81cdfbf15ee877b3117afa5b23883a7e385af09e5ecd797ebc96364326a1dc
+generator:
+  name: build_gnu.sh
+  toolchain: tricore-elf-gcc 13.4.1 20260422 / binutils 2.40 (commits in ../tricore/TOOLCHAIN.md)
+rights:
+  license: MIT
+  redistribution_allowed: true
+  toolchain_code_in_outputs: none (-nostdlib, -ffreestanding)
+purpose:
+  fixture_class: reference
+  targets: [elf, gnu_map, hexrec, bmhd, verify]
+verification:
+  reviewed: true

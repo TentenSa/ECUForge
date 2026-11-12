@@ -1,0 +1,24 @@
+{
+ "name": "reference-aurix-bmhd-gnu",
+ "fixture_class": "reference",
+ "device": "tc38x",
+ "toolchain": "gnu",
+ "artifacts": {"image": "out/reference.hex", "elf": "out/reference.elf", "map": "out/reference.map"},
+ "provenance": {"source": "fixtures/reference/aurix-bmhd: values from src/bmhd.c and link_gnu.ld; CRC from bmhd_crc.py (AP32381 method)"},
+ "verification": {"allow_unexpected_unknown": false, "expected_unknowns": []},
+ "expect": {
+  "L0": {
+   "regions": [{"name": "pfls0", "origin": "0x80000000", "length": "0x10000"},
+               {"name": "ucb_bmhd0", "origin": "0xAF400000", "length": "0x200"}],
+   "sections": [{"name": ".startup", "vma": "0x80000020"},
+                {"name": ".bmhd_0_orig", "vma": "0xAF400000", "lma": "0xAF400000", "size": "0x200"}],
+   "symbols": [{"name": "_START", "addr": "0x80000020"}, {"name": "bmhd_0_orig", "addr": "0xAF400000"}],
+   "image": [{"addr": "0xAF400000", "size": "0x200"}]
+  },
+  "L1": {
+   "entry": "0x80000020",
+   "bmhd": [{"addr": "0xAF400000", "stad": "0x80000020", "crc_status": "match"}]
+  }
+ },
+ "allowed_findings": []
+}
