@@ -44,6 +44,8 @@ class OutputSection:
     region: str | None = None  # memory / chip name the map attributes it to
     line: int = 0
     inputs: list[InputSection] = field(default_factory=list)
+    line_end: int = 0  # last line of a header that spans several lines
+    region_declared: bool = False  # True when the map itself names the region ("memory region -> X")
 
 
 @dataclass
@@ -66,6 +68,7 @@ class LinkMap:
     symbols: list[MapSymbol] = field(default_factory=list)
     # everything the parser did not turn into model data; never dropped (see formats/events.py)
     events: list[ParseEvent] = field(default_factory=list)
+    empty_sections: list[tuple[str, int]] = field(default_factory=list)  # output sections with no address/size
 
     def symbol(self, name: str) -> MapSymbol | None:
         return next((s for s in self.symbols if s.name == name), None)
