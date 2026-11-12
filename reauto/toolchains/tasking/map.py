@@ -129,6 +129,11 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
                 lm.symbols.append(MapSymbol(c[cn], a, None, None, None, ln,
                                             assignment=c[cn].startswith("_lc_")))
         elif h and h[0] == "memory" and "total" in h:
+            pass
+        else:
+            lm.unsupported.append((rows[0][0] - 2 if rows else 0, "unsupported table: " + " | ".join(header)))
+            continue
+        if h and h[0] == "memory" and "total" in h:
             cm, ct = _col(header, "Memory"), _col(header, "Total")
             cfree = _col(header, "Free")
             for ln, c in rows:
@@ -203,7 +208,24 @@ def parse_lsl(path: str | Path) -> dict:
             "load_addr": (re.search(r"load_addr\s*=\s*([^,)]+)", attrs) or [None, None])[1],
             "selects": re.findall(r'select\s+"([^"]+)"', g.group(3)),
         })
-    return {"defines": defs, "memories": memories, "groups": groups}
+    return {"defines": defs, "memories": memories, "groups": groups, "unsupported": _lsl_unsupported(clean)}
+
+
+LSL_KNOWN = {"memory", "section_layout", "group", "select", "architecture", "derivative", "processor", "bus",
+             "space", "map", "section_setup", "reserved", "stack", "heap", "copytable", "include"}
+
+
+def _lsl_unsupported(text: str) -> list[tuple[int, str]]:
+    """Top-level LSL statements this parser does not model, kept with their line numbers."""
+    out, depth = [], 0
+    for ln, line in enumerate(text.splitlines(), 1):
+        s = line.strip()
+        if depth == 0 and s and not s.startswith("#") and s not in ("{", "}"):
+            kw = re.match(r"[A-Za-z_]\w*", s)
+            if kw and kw.group(0) not in LSL_KNOWN:
+                out.append((ln, s[:120]))
+        depth += line.count("{") - line.count("}")
+    return out
 
 
 def apply_lsl(lm: LinkMap, lsl: dict) -> list[str]:
@@ -216,11 +238,13 @@ def apply_lsl(lm: LinkMap, lsl: dict) -> list[str]:
         if r is None:
             if offs and mem["size"]:
                 lm.regions.append(MemoryRegion(mem["name"], offs[0], mem["size"], f"lsl:{mem['type']}",
-                                               mem["line"], offs[1:]))
+                                               mem["line"], offs[1:],
+                                               mem_type={"ram": "ram", "rom": "rom"}.get(mem["type"])))
                 notes.append(f"region {mem['name']} added from LSL (no sections located in it)")
             continue
         if mem["size"] and r.attrs.endswith("(extent)"):
             r.length = mem["size"]
             r.attrs = f"lsl:{mem['type']}"
+        r.mem_type = {"ram": "ram", "rom": "rom"}.get(mem["type"])
         r.aliases = [o for o in offs if o != r.origin]
     return notes

@@ -36,7 +36,7 @@ def crc32(data: bytes, poly: int = 0x04C11DB7, init: int = 0xFFFFFFFF, xorout: i
         for b in data:
             crc ^= b << 24
             for _ in range(8):
-                crc = ((crc << 1) ^ poly if crc & 0x80000000 else crc << 1) & 0xFFFFFFFF
+                crc = ((crc << 1) ^ poly if crc >> 31 else crc << 1) & 0xFFFFFFFF
     return (crc ^ xorout) & 0xFFFFFFFF
 
 

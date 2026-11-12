@@ -14,6 +14,7 @@ class MemoryRegion:
     # TASKING LSL can give several bus mappings for one memory (cached / non-cached)
     aliases: list[int] = field(default_factory=list)
     used: int | None = None  # bytes used, when the map reports it
+    mem_type: str | None = None  # normalised by the parser: "ram" | "rom" | None (not stated)
 
     @property
     def end(self) -> int:
@@ -61,7 +62,9 @@ class LinkMap:
     regions: list[MemoryRegion] = field(default_factory=list)
     sections: list[OutputSection] = field(default_factory=list)
     symbols: list[MapSymbol] = field(default_factory=list)
-    warnings: list[tuple[int, str]] = field(default_factory=list)
+    # constructs the parser did not understand: (line, text). Never dropped silently;
+    # the project reports each one as an UNKNOWN finding with file and line.
+    unsupported: list[tuple[int, str]] = field(default_factory=list)
 
     def symbol(self, name: str) -> MapSymbol | None:
         return next((s for s in self.symbols if s.name == name), None)

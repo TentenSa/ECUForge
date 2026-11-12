@@ -54,7 +54,9 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
             m = RE_MEM_ROW.match(line)
             if m and m.group(1) not in ("Name", "*default*"):
                 lm.regions.append(MemoryRegion(m.group(1), int(m.group(2), 16), int(m.group(3), 16),
-                                               m.group(4) or "", ln))
+                                               m.group(4) or "", ln, mem_type=_mem_type(m.group(4) or "")))
+            elif s and not s.startswith("Name") and not s.startswith("*default*"):
+                lm.unsupported.append((ln, s))
             continue
         if mode != "map":
             continue
@@ -67,6 +69,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 cur_in = None
                 pending_out = None
                 continue
+            lm.unsupported.append((pending_out[1], f"output section name without address/size: {pending_out[0]}"))
             pending_out = None
         if pending_in:
             m = RE_IN_CONT.match(line)
@@ -76,6 +79,7 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 cur_out.inputs.append(cur_in)
                 pending_in = None
                 continue
+            lm.unsupported.append((pending_in[1], f"input section name without address/size: {pending_in[0]}"))
             pending_in = None
 
         if not line or line.startswith(SKIP_HEADS):
@@ -91,6 +95,8 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
             m = RE_OUT_NAME.match(line)
             if m:
                 pending_out = (m.group(1), ln)
+            else:
+                lm.unsupported.append((ln, s))
             continue
 
         # ---- input section (single leading space) -------------------
@@ -106,6 +112,8 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
             m = RE_IN_NAME.match(line)
             if m:
                 pending_in = (m.group(1), ln)
+            else:
+                lm.unsupported.append((ln, s))
             continue
 
         # ---- symbol / assignment ------------------------------------
@@ -116,13 +124,31 @@ def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
                 continue
             if "=" in rest:
                 a = RE_ASSIGN_NAME.search(rest)
+                if a and a.group(1) == ".":
+                    continue  # location-counter assignment, not a symbol
                 if a:
                     lm.symbols.append(MapSymbol(a.group(1), addr, cur_out.name if cur_out else None,
                                                 None, None, ln, assignment=True))
+                else:
+                    lm.unsupported.append((ln, s))
             elif re.fullmatch(r"[A-Za-z_.$][\w.$@]*", rest):
                 lm.symbols.append(MapSymbol(rest, addr, cur_out.name if cur_out else None,
                                             cur_in.obj if cur_in else None, None, ln))
+            else:
+                lm.unsupported.append((ln, s))
+            continue
+        lm.unsupported.append((ln, s))
     return lm
+
+
+def _mem_type(attrs: str) -> str | None:
+    """GNU ld MEMORY attributes: letters before '!' are granted, after are negated."""
+    granted = attrs.split("!")[0].lower()
+    if "w" in granted:
+        return "ram"
+    if granted and ("x" in granted or "r" in granted):
+        return "rom"
+    return None
 
 
 def _new_out(lm: LinkMap, name: str, m: re.Match, ln: int, name_group: bool = False) -> OutputSection:

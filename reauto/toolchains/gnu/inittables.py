@@ -4,7 +4,7 @@
 Returned entries are validated against the image by the caller."""
 from __future__ import annotations
 
-from ...core.evidence import Source
+from ...core.raminit import validate_table
 
 
 def _walk(p, sym, width):
@@ -40,6 +40,10 @@ def decode_gnu_tables(p) -> dict | None:
         out["sources"].append(s.source)
         if err:
             out["problems"].append(f"__copy_table: {err}")
+    v = validate_table(p, out["copy"], out["clear"])
+    out["kind"] = "derived" if v["valid"] and not out["problems"] else "unknown"
+    out["problems"] += v["reasons"]
+    out["exact_hits"] = v["exact_hits"]
     out["summary"] = (f"GNU/iLLD init tables: {len(out['copy'])} copy and {len(out['clear'])} clear records "
                       "(record format per iLLD GNU linker script convention)")
     return out

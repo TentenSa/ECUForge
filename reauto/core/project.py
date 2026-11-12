@@ -77,8 +77,11 @@ class Project:
         if self.image_from_elf:
             self.image = MemoryImage(alias=self.profile.alternate)
             self.image_from_elf = False
-        (load_ihex if kind == "hex" else load_srec)(path, art.short, self.image)
+        problems: list = []
+        (load_ihex if kind == "hex" else load_srec)(path, art.short, self.image, problems)
         self.image_artifacts.append(art)
+        self._report_unsupported(art, problems, "record rejected; its bytes are absent (UNKNOWN) in the image",
+                                 "error")
         self.store.add("input", "observed", "info",
                        f"{art.type} image: {len(self.image.segments)} contiguous segment(s), {self.image.size} bytes",
                        [Source(art.short, "whole file")],
@@ -106,6 +109,7 @@ class Project:
         tc = toolchain or self.options.toolchain or detect_map_toolchain(path)
         art = self.store.register(Artifact.from_path(path, f"{tc}-map", f"toolchains.{tc}.map"))
         self.map, self.map_art = parse_map(tc, path, art.short), art
+        self._report_unsupported(art, self.map.unsupported, "construct not understood by the parser")
         self.store.add("input", "observed", "info",
                        f"{tc} map: {len(self.map.regions)} regions, {len(self.map.sections)} output sections, "
                        f"{sum(len(s.inputs) for s in self.map.sections)} input sections, "
@@ -118,6 +122,7 @@ class Project:
         art = self.store.register(Artifact.from_path(path, "lsl", "toolchains.tasking.lsl"))
         self.lsl = parse_lsl(path)
         notes = apply_lsl(self.map, self.lsl) if self.map else []
+        self._report_unsupported(art, self.lsl["unsupported"], "LSL statement not modelled by the parser")
         self.store.add("input", "observed", "info",
                        f"LSL: {len(self.lsl['memories'])} memory declarations, {len(self.lsl['groups'])} groups",
                        [Source(art.short, "whole file")], {"notes": notes})
@@ -127,11 +132,22 @@ class Project:
         from ..formats.a2l.parser import parse_a2l
         art = self.store.register(Artifact.from_path(path, "a2l", "formats.a2l"))
         self.a2l, self.a2l_art = parse_a2l(path), art
+        self._report_unsupported(art, self.a2l.problems, "A2L block not parsed")
         self.store.add("input", "observed", "info",
                        f"A2L: {len(self.a2l.characteristics)} characteristics, {len(self.a2l.measurements)} "
                        f"measurements, {len(self.a2l.axis_pts)} axis_pts, {len(self.a2l.segments)} memory segments",
                        [Source(art.short, "whole file")], level="L0")
         return art
+
+    def _report_unsupported(self, art: Artifact, items: list, what: str, severity: str = "warning") -> None:
+        """Rule: parsers never drop input silently. Every unsupported item becomes an UNKNOWN finding
+        with file and line (first 50 individually, then one summary)."""
+        for ln, text in items[:50]:
+            self.store.add("input", "unknown", severity, f"{what}: {text}",
+                           [Source(art.short, f"line {ln}", str(text)[:120])], {"line": ln})
+        if len(items) > 50:
+            self.store.add("input", "unknown", severity, f"{len(items) - 50} further items: {what}",
+                           [Source(art.short, "whole file")], {"lines": [ln for ln, _ in items[50:]]})
 
     # ---- unified symbol view --------------------------------------------------
     def symbols(self) -> dict[str, ResolvedSymbol]:

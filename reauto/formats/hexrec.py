@@ -1,4 +1,10 @@
-"""Intel HEX and Motorola S-record decoders (strict, checksum-verified)."""
+"""Intel HEX and Motorola S-record decoders.
+
+Fail-safe rule: a record that fails its length or checksum check is not decoded
+and not guessed at; it is recorded in `problems` with its line number and the
+rest of the file continues. Its bytes stay absent (UNKNOWN) in the image. A file
+whose first record is not of the expected format raises RecordError.
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,23 +16,35 @@ class RecordError(ValueError):
     pass
 
 
-def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None) -> MemoryImage:
+def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None,
+              problems: list | None = None) -> MemoryImage:
     img = image or MemoryImage()
+    probs = problems if problems is not None else []
     base = 0
+    first = True
     for ln, raw in enumerate(Path(path).read_text(errors="replace").splitlines(), 1):
         line = raw.strip()
         if not line:
             continue
+        bad = None
+        rec = b""
         if not line.startswith(":"):
-            raise RecordError(f"{path}:{ln}: not an Intel HEX record")
-        try:
-            rec = bytes.fromhex(line[1:])
-        except ValueError as e:
-            raise RecordError(f"{path}:{ln}: bad hex digits") from e
-        if len(rec) < 5 or len(rec) != rec[0] + 5:
-            raise RecordError(f"{path}:{ln}: length mismatch")
-        if sum(rec) & 0xFF:
-            raise RecordError(f"{path}:{ln}: checksum error")
+            bad = "not an Intel HEX record"
+        else:
+            try:
+                rec = bytes.fromhex(line[1:])
+            except ValueError:
+                bad = "bad hex digits"
+        if bad is None and (len(rec) < 5 or len(rec) != rec[0] + 5):
+            bad = "length mismatch"
+        if bad is None and sum(rec) & 0xFF:
+            bad = "checksum error"
+        if bad:
+            if first:
+                raise RecordError(f"{path}:{ln}: {bad}")
+            probs.append((ln, bad))
+            continue
+        first = False
         n, addr, rtype, data = rec[0], (rec[1] << 8) | rec[2], rec[3], rec[4:-1]
         if rtype == 0x00:
             img.add(base + addr, data, origin, f"lines {ln}-{ln}")
@@ -39,26 +57,40 @@ def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None) -
         elif rtype in (0x03, 0x05):
             img.entry = int.from_bytes(data, "big")
         else:
-            raise RecordError(f"{path}:{ln}: unknown record type {rtype:#x}")
+            probs.append((ln, f"unknown record type {rtype:#x}"))
     return img
 
 
 _SREC_ADDR = {"0": 2, "1": 2, "2": 3, "3": 4, "5": 2, "6": 3, "7": 4, "8": 3, "9": 2}
 
 
-def load_srec(path: str | Path, origin: str, image: MemoryImage | None = None) -> MemoryImage:
+def load_srec(path: str | Path, origin: str, image: MemoryImage | None = None,
+              problems: list | None = None) -> MemoryImage:
     img = image or MemoryImage()
+    probs = problems if problems is not None else []
+    first = True
     for ln, raw in enumerate(Path(path).read_text(errors="replace").splitlines(), 1):
         line = raw.strip()
         if not line:
             continue
+        bad, rec = None, b""
         if len(line) < 4 or line[0] != "S" or line[1] not in _SREC_ADDR:
-            raise RecordError(f"{path}:{ln}: not an S-record")
-        rec = bytes.fromhex(line[2:])
-        if len(rec) != rec[0] + 1:
-            raise RecordError(f"{path}:{ln}: length mismatch")
-        if (sum(rec) & 0xFF) != 0xFF:
-            raise RecordError(f"{path}:{ln}: checksum error")
+            bad = "not an S-record"
+        else:
+            try:
+                rec = bytes.fromhex(line[2:])
+            except ValueError:
+                bad = "bad hex digits"
+        if bad is None and len(rec) != rec[0] + 1:
+            bad = "length mismatch"
+        if bad is None and (sum(rec) & 0xFF) != 0xFF:
+            bad = "checksum error"
+        if bad:
+            if first:
+                raise RecordError(f"{path}:{ln}: {bad}")
+            probs.append((ln, bad))
+            continue
+        first = False
         alen = _SREC_ADDR[line[1]]
         addr = int.from_bytes(rec[1 : 1 + alen], "big")
         data = rec[1 + alen : -1]

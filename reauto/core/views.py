@@ -101,17 +101,9 @@ def linker_mem_kind(p, addr: int) -> tuple[str | None, Source | None]:
     """RAM/ROM as stated by the build itself (region attributes, LSL type, ELF flags)."""
     if p.map:
         r = p.map.region_of(addr)
-        if r is not None:
-            src = Source(p.map.artifact, f"line {r.line}" if r.line else "memory table", r.name)
-            a = r.attrs.split("!")[0]
-            if r.attrs.startswith("lsl:"):
-                t = r.attrs[4:]
-                if t in ("ram", "rom"):
-                    return ("ram" if t == "ram" else "flash"), src
-            elif a and "w" in a:
-                return "ram", src
-            elif a and ("x" in a or "r" in a):
-                return "flash", src
+        if r is not None and r.mem_type:
+            return ("ram" if r.mem_type == "ram" else "flash"), Source(
+                p.map.artifact, f"line {r.line}" if r.line else "memory table", r.name)
     if p.elf:
         for s in p.elf.sections:
             if s.alloc and s.size and s.addr <= addr < s.addr + s.size:

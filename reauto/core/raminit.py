@@ -10,8 +10,6 @@ from __future__ import annotations
 from .evidence import Source
 from .views import linker_mem_kind
 
-MAX_LEN = 0x400000
-
 
 def ram_sections(p):
     """Located sections the build itself marks as RAM data (ELF flags / region attributes / class)."""
@@ -25,8 +23,8 @@ def ram_sections(p):
 def validate_record(p, rec: dict, op: str) -> tuple[str | None, str | None]:
     """Return (rejection reason or None, exactly matching section name or None)."""
     dst, length = (rec["dst"], rec["size"]) if op == "copy" else (rec["addr"], rec["size"])
-    if not (0 < length <= MAX_LEN):
-        return f"implausible length {length:#x}", None
+    if length <= 0:
+        return f"non-positive length {length:#x}", None
     secs = ram_sections(p)
     host = [s for s in secs if s.vma <= dst and dst + length <= s.vma + s.size]
     if secs and not host:
@@ -65,7 +63,8 @@ def coverage_check(p, copy: list[dict], clear: list[dict], sources: list[Source]
 
 
 def recover_init(p) -> dict:
-    """Run every toolchain init-table decoder, validate, report, and check coverage."""
+    """Run every toolchain init-table decoder (each returns validated, normalised records), report, and check
+    coverage. No toolchain-specific branching here."""
     from ..toolchains import init_table_decoders
     st = p.store
     results = []
@@ -75,11 +74,6 @@ def recover_init(p) -> dict:
         r = dec(p)
         if r is None:
             continue
-        if r["toolchain"].startswith("gnu"):
-            v = validate_table(p, r["copy"], r["clear"])
-            r["kind"] = "derived" if v["valid"] and not r["problems"] else "unknown"
-            r["problems"] += v["reasons"]
-            r["exact_hits"] = v["exact_hits"]
         entries = ([{"op": "copy", "src": hex(e["src"]), "dst": hex(e["dst"]), "size": hex(e["size"]),
                      "section": e.get("section")} for e in r["copy"]] +
                    [{"op": "clear", "dst": hex(e["addr"]), "size": hex(e["size"]), "section": e.get("section")}
