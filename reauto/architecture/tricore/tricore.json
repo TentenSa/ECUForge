@@ -1,0 +1,51 @@
+{
+ "id": "tricore.tc1.6x",
+ "version": "1",
+ "architecture": "tricore",
+ "sources": {
+  "IFX-TC18-ARCH-V1": {
+   "vendor": "Infineon",
+   "document": "TriCore TC1.8 architecture manual, Volume 1",
+   "revision": "V1.0.0",
+   "date": "2024-02-14",
+   "url": "https://www.infineon.com/assets/row/public/documents/10/44/infineon-infineon-tricore-tc1.8-architecture-usermanual-en.pdf",
+   "tier": "silicon-vendor",
+   "scope": "TC1.8 core; used for architecture-wide CSA and trap-class facts that AURIX TC3xx (TC1.6.2) shares. Replace with the TC1.6.2 manual when checked."
+  },
+  "HIGHTEC-PXROS-TRAP-AN": {
+   "vendor": "HighTec",
+   "document": "User Trap Handling in PXROS-HR: Aurix trap system overview",
+   "revision": null,
+   "date": null,
+   "url": "https://docs.hightec-rt.com/pxros-user-trap-handling-an/chapter/aurix-trap-system.html",
+   "tier": "toolchain-vendor"
+  }
+ },
+ "csa_size": {
+  "value": 64,
+  "source": "IFX-TC18-ARCH-V1",
+  "ref": "1.3: a CSA consists of 16 words, aligned on a 16-word boundary",
+  "verification": "documented"
+ },
+ "csa_align": {
+  "value": 64,
+  "source": "IFX-TC18-ARCH-V1",
+  "ref": "1.3: aligned on a 16-word boundary",
+  "verification": "documented"
+ },
+ "trap_classes": {
+  "value": 8,
+  "source": "IFX-TC18-ARCH-V1",
+  "ref": "1.5 / 6.3: eight trap classes 0..7",
+  "verification": "documented"
+ },
+ "trap_vector_spacing": {
+  "value": 32,
+  "source": "HIGHTEC-PXROS-TRAP-AN",
+  "ref": "trap vector of 32 bytes per entry, indexed by trap class",
+  "verification": "documented-secondary"
+ },
+ "btv_align": null,
+ "biv_align": null,
+ "stack_align": null
+}

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rea-auto"
+version = "0.1.1a1"
+description = "Evidence-first reverse engineering for automotive embedded builds (AURIX TC3xx, AUTOSAR Classic)"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]  # 1.x (FastMCP) and 2.x (MCPServer) both supported
+dev = ["pytest>=8"]
+yaml = ["pyyaml>=6"]
+
+[project.scripts]
+rea-auto = "reauto.cli:main"
+rea-auto-mcp = "reauto.mcp_server:main"
+
+[tool.setuptools.packages.find]
+include = ["reauto*"]
+
+[tool.setuptools.package-data]
+"reauto.silicon.infineon.aurix" = ["targets/*.json"]
+"reauto.architecture.tricore" = ["*.json"]

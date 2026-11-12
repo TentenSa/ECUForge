@@ -1,0 +1,29 @@
+{
+ "name": "reference-tricore-gnu",
+ "fixture_class": "reference",
+ "device": "tc38x",
+ "toolchain": "gnu",
+ "artifacts": {"image": "out/reference.hex", "elf": "out/reference.elf", "map": "out/reference.map"},
+ "provenance": {"source": "fixtures/reference/tricore: src/*.c and link_gnu.ld (expected values below come from link_gnu.ld only)"},
+ "allow_unknown": true,
+ "expect": {
+  "L0": {
+   "regions": [{"name": "pfls0", "origin": "0x80000000", "length": "0x100000"},
+               {"name": "dsram0", "origin": "0x70000000", "length": "0x10000"}],
+   "sections": [{"name": ".startup", "vma": "0x80000020"}, {"name": ".text", "vma": "0x80000200"},
+                {"name": ".rodata", "vma": "0x80004000"}, {"name": ".data", "vma": "0x70000000", "lma": "0x80008000"},
+                {"name": ".bss", "vma": "0x70001000"}, {"name": ".csa0", "vma": "0x70008000", "size": "0x2000"},
+                {"name": ".ustack0", "vma": "0x7000a000", "size": "0x1000"}],
+   "symbols": [{"name": "__CSA0", "addr": "0x70008000"}, {"name": "__CSA0_END", "addr": "0x7000a000"},
+               {"name": "__clear_table", "addr": "0x80007000"}, {"name": "__copy_table", "addr": "0x80007100"},
+               {"name": "_START", "addr": "0x80000020"}]
+  },
+  "L1": {
+   "entry": "0x80000020",
+   "csa": [{"core": 0, "start": "0x70008000", "size": "0x2000"}],
+   "stacks": [{"core": 0, "kind": "user", "bottom": "0x7000a000", "top": "0x7000b000"}],
+   "vectors": [{"core": 0, "kind": "trap", "addr": "0x80000100"}, {"core": 0, "kind": "interrupt", "addr": "0x80006000"}]
+  }
+ },
+ "allowed_findings": []
+}

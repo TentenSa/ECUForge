@@ -1,0 +1,23 @@
+# Changelog
+
+## 0.1.1a1 (unreleased)
+Project boundary: rea-auto is built only from public specifications, open artifacts, synthetic fixtures and owner-contributed artifacts (CONTRIBUTING.md).
+
+- Layered packages: core, formats, architecture/tricore, silicon/infineon/aurix, toolchains/{gnu,tasking}, semantics.
+- Provenance: every source carries type (ELF, HEX, S19, MAP, LSL, A2L, MCU_PROFILE, ARCH_SPEC, ...), artifact SHA-256 and parser version.
+- Levels redefined: L0 artifact facts, L1 structural recovery, L2 semantic recovery.
+- MCU profiles: estimated values removed. Facts are cited (Infineon AP32381 V1.4, Infineon TC3x C4C variants addendum v1.0, TASKING KB 564) or null. PFLASH/DFLASH bases, CPU2+ DSPR bases, PSPR bases and bus aliasing are unknown until documented.
+- TriCore architecture facts in their own cited spec (CSA 16 words, 8 trap classes, 32-byte trap spacing). BTV/BIV/stack alignment are null, so those checks report unknown.
+- Physical / linker / image address views with CONTAINED, ALIASED, OVERLAPS, OUTSIDE, UNKNOWN relations. Boundary disagreements are conflicts with both claims kept; no view overrides another.
+- BMHD: documented algorithm `aurix_tc3xx_bmhd` checked against HighTec's public tc39x example vector. CRC modes discover / profile / strict; discovery results are inferred and log every candidate. BMI decoded per AP32381. Confirmation word reported without interpretation.
+- Init tables: GNU/iLLD and TASKING decoders feed one validator and one RAM-coverage check. Every TASKING candidate keeps its rejection reason.
+- Removed undocumented heuristics: minimum CSA frame warning, CSA-in-own-DSPR warning, UCB "unlocked" interpretation, section-name core heuristic.
+- A2L and AUTOSAR attribution moved to `semantics/`, behind `--experimental` (planned 0.4.x / 0.5.x). AUTOSAR vendor infix generalised to any vendor id.
+- `verify` scores correct / unknown / conflict / false_claim and writes a run record. Internal-build fixture procedure removed; fixture classes A (synthetic) and C (reference firmware) added, B (public vendor examples) documented.
+- Linker draft command renamed to `linker-draft`.
+
+## 0.1.1a0
+Conflict kind, L0/L1/L2, BMHD CRC candidates, per-CPU profiles, TASKING `_lc_cp` decode, verify harness (superseded by 0.1.1a1).
+
+## 0.1.0a0
+Initial framework.

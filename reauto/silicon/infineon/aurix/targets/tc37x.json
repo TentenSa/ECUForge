@@ -1,0 +1,363 @@
+{
+ "id": "infineon.aurix.tc3xx.tc37x",
+ "version": "1",
+ "device": "TC37x",
+ "architecture": "tricore",
+ "scope": "TC37x AA step as listed in IFX-C4C-ADDENDUM; other steps or variants may differ",
+ "sources": {
+  "IFX-AP32381": {
+   "vendor": "Infineon",
+   "document": "AP32381 AURIX TC3xx startup and initialisation (application note)",
+   "revision": "V1.4",
+   "date": "2024-04-17",
+   "url": "https://documentation.infineon.com/aurixtc3xx/docs/nyb1710229964455",
+   "tier": "silicon-vendor"
+  },
+  "IFX-C4C-ADDENDUM": {
+   "vendor": "Infineon",
+   "document": "AURIX TC3x C4C variants, Datasheet addendum",
+   "revision": "v1.0",
+   "date": "2025-12-12",
+   "url": "https://www.infineon.com/assets/row/public/documents/10/49/infineon-aurix-tc3x-c4c-variants-datasheet-cn.pdf",
+   "tier": "silicon-vendor"
+  },
+  "TASKING-KB564": {
+   "vendor": "TASKING",
+   "document": "Memory usage information included in a map file (knowledge base article 564)",
+   "revision": null,
+   "date": "2024-11-15",
+   "url": "https://kb.tasking.com/KB/129/Article/564",
+   "tier": "toolchain-vendor"
+  }
+ },
+ "cpus": [
+  {
+   "id": 0,
+   "dspr": {
+    "base": {
+     "value": 1879048192,
+     "source": "TASKING-KB564",
+     "ref": "DSPR SRI/local mapping statement and tc39xb.lsl excerpt",
+     "verification": "documented-secondary"
+    },
+    "size": {
+     "value": 245760,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: DSPR (KB) '240 in CPU0&1; 96 other'",
+     "verification": "documented"
+    }
+   },
+   "pspr": {
+    "base": null,
+    "size": {
+     "value": 65536,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: PSPR (KB) '64 per CPU'",
+     "verification": "documented"
+    }
+   },
+   "local_alias": {
+    "dspr": {
+     "value": 3489660928,
+     "source": "TASKING-KB564",
+     "ref": "DSPR SRI/local mapping statement and tc39xb.lsl excerpt",
+     "verification": "documented-secondary"
+    },
+    "pspr": null
+   }
+  },
+  {
+   "id": 1,
+   "dspr": {
+    "base": {
+     "value": 1610612736,
+     "source": "TASKING-KB564",
+     "ref": "DSPR SRI/local mapping statement and tc39xb.lsl excerpt",
+     "verification": "documented-secondary"
+    },
+    "size": {
+     "value": 245760,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: DSPR (KB) '240 in CPU0&1; 96 other'",
+     "verification": "documented"
+    }
+   },
+   "pspr": {
+    "base": null,
+    "size": {
+     "value": 65536,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: PSPR (KB) '64 per CPU'",
+     "verification": "documented"
+    }
+   },
+   "local_alias": {
+    "dspr": {
+     "value": 3489660928,
+     "source": "TASKING-KB564",
+     "ref": "DSPR SRI/local mapping statement and tc39xb.lsl excerpt",
+     "verification": "documented-secondary"
+    },
+    "pspr": null
+   }
+  },
+  {
+   "id": 2,
+   "dspr": {
+    "base": null,
+    "size": {
+     "value": 98304,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: DSPR (KB) '240 in CPU0&1; 96 other'",
+     "verification": "documented"
+    }
+   },
+   "pspr": {
+    "base": null,
+    "size": {
+     "value": 65536,
+     "source": "IFX-C4C-ADDENDUM",
+     "ref": "TC37x AA: PSPR (KB) '64 per CPU'",
+     "verification": "documented"
+    }
+   },
+   "local_alias": {
+    "dspr": {
+     "value": 3489660928,
+     "source": "TASKING-KB564",
+     "ref": "DSPR SRI/local mapping statement and tc39xb.lsl excerpt",
+     "verification": "documented-secondary"
+    },
+    "pspr": null
+   }
+  }
+ ],
+ "flash": {
+  "pflash": {
+   "base": null,
+   "size": {
+    "value": 6291456,
+    "source": "IFX-C4C-ADDENDUM",
+    "ref": "TC37x AA: Program Flash (MB) 6",
+    "verification": "documented"
+   }
+  },
+  "dflash0": {
+   "base": null,
+   "size": {
+    "value": 262144,
+    "source": "IFX-C4C-ADDENDUM",
+    "ref": "TC37x AA: Data Flash0 (KB) 256",
+    "verification": "documented"
+   }
+  }
+ },
+ "bus_alias": null,
+ "bmhd": {
+  "slots": [
+   {
+    "name": "UCB_BMHD0_ORIG",
+    "addr": {
+     "value": 2940207104,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD1_ORIG",
+    "addr": {
+     "value": 2940207616,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD2_ORIG",
+    "addr": {
+     "value": 2940208128,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD3_ORIG",
+    "addr": {
+     "value": 2940208640,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD0_COPY",
+    "addr": {
+     "value": 2940211200,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD1_COPY",
+    "addr": {
+     "value": 2940211712,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD2_COPY",
+    "addr": {
+     "value": 2940212224,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   },
+   {
+    "name": "UCB_BMHD3_COPY",
+    "addr": {
+     "value": 2940212736,
+     "source": "IFX-AP32381",
+     "ref": "Boot Mode Headers: UCB_BMHDx_ORIG/COPY locations",
+     "verification": "documented"
+    },
+    "size": {
+     "value": 512,
+     "source": "IFX-AP32381",
+     "ref": "512 B per block",
+     "verification": "documented"
+    }
+   }
+  ],
+  "fields": {
+   "value": {
+    "BMI": 0,
+    "BMHDID": 2,
+    "STAD": 4,
+    "CRCBMHD": 8,
+    "CRCBMHD_N": 12,
+    "PW0": 256,
+    "CONFIRMATION": 496
+   },
+   "source": "IFX-AP32381",
+   "ref": "BMHD field layout table",
+   "verification": "documented"
+  },
+  "bmhdid": {
+   "value": 45913,
+   "source": "IFX-AP32381",
+   "ref": "BMHDID: valid value B359H",
+   "verification": "documented"
+  },
+  "bmi_bits": {
+   "value": {
+    "PINDIS": [
+     0,
+     0
+    ],
+    "HWCFG": [
+     3,
+     1
+    ],
+    "LSENA": [
+     7,
+     4
+    ],
+    "LBISTENA": [
+     8,
+     8
+    ],
+    "CHSWENA": [
+     11,
+     9
+    ]
+   },
+   "source": "IFX-AP32381",
+   "ref": "BMI field description",
+   "verification": "documented"
+  },
+  "hwcfg_modes": {
+   "value": {
+    "7": "internal start from flash",
+    "6": "alternate boot mode (ABM)",
+    "4": "generic bootstrap loader (ASC/CAN)",
+    "3": "ASC bootstrap loader"
+   },
+   "source": "IFX-AP32381",
+   "ref": "BMI.HWCFG encodings",
+   "verification": "documented"
+  },
+  "stad_rules": {
+   "value": {
+    "word_aligned": true,
+    "in_pflash": true
+   },
+   "source": "IFX-AP32381",
+   "ref": "STAD: word-aligned inside PFLASH",
+   "verification": "documented"
+  },
+  "abmhdid": {
+   "value": 4202476377,
+   "source": "IFX-AP32381",
+   "ref": "ABMHD: ABMHDID valid value FA7C B359H",
+   "verification": "documented"
+  },
+  "crc": {
+   "mode": "profile",
+   "algorithm": {
+    "value": "aurix_tc3xx_bmhd",
+    "source": "IFX-AP32381",
+    "ref": "CRC: IEEE 802.3 polynomial, bit-reflected and inverted; 32-bit words treated big-endian; BMHD check covers 2 words (BMI, BMHDID, STAD)",
+    "verification": "documented"
+   }
+  }
+ },
+ "tasking_copy_table": null
+}
