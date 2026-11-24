@@ -92,6 +92,7 @@ class Finding:
     data: dict[str, Any] = field(default_factory=dict)
     derived_from: list[str] = field(default_factory=list)
     level: str = "L0"
+    key: str = ""  # semantic identity: "<rule>@<subject>"; stable when the evidence behind it changes
 
     def __post_init__(self) -> None:
         if self.kind not in KINDS:
@@ -116,6 +117,7 @@ class EvidenceStore:
         self.parse_events: list[dict] = []  # every ParseEvent, with its artifact; all preserved
         self.parse_health: dict[str, dict] = {}  # per artifact
         self._counters: dict[str, itertools.count] = {}
+        self._keys: dict[str, int] = {}
 
     def register(self, art: Artifact) -> Artifact:
         self.artifacts[art.short] = art
@@ -129,22 +131,26 @@ class EvidenceStore:
 
     def add(self, topic: str, kind: str, severity: str, claim: str, sources: Iterable[Source] = (),
             data: dict[str, Any] | None = None, derived_from: Iterable[str] = (),
-            level: str | None = None) -> Finding:
+            level: str | None = None, key: str = "") -> Finding:
         c = self._counters.setdefault(topic, itertools.count(1))
+        if key in self._keys:  # same rule and subject emitted twice: disambiguate in emission order
+            self._keys[key] += 1
+            key = f"{key}#{self._keys[key]}"
+        self._keys[key] = self._keys.get(key, 1)
         f = Finding(id=f"{topic.upper()}-{next(c):04d}", topic=topic, kind=kind, severity=severity, claim=claim,
                     sources=[self._enrich(s) for s in sources], data=data or {},
-                    derived_from=list(derived_from), level=level or TOPIC_LEVEL.get(topic, "L1"))
+                    derived_from=list(derived_from), level=level or TOPIC_LEVEL.get(topic, "L1"), key=key)
         self.findings.append(f)
         return f
 
     def conflict(self, topic: str, severity: str, claim: str, claims: list[tuple[Source, Any]],
                  data: dict[str, Any] | None = None, derived_from: Iterable[str] = (),
-                 level: str | None = None) -> Finding:
+                 level: str | None = None, key: str = "") -> Finding:
         """Record contradictory evidence; each (source, value) pair is kept, none is preferred."""
         d = dict(data or {})
         d["claims"] = [{"source": str(self._enrich(s)), "type": self._enrich(s).type, "value": v}
                        for s, v in claims]
-        return self.add(topic, "conflict", severity, claim, [s for s, _ in claims], d, derived_from, level)
+        return self.add(topic, "conflict", severity, claim, [s for s, _ in claims], d, derived_from, level, key)
 
     def get(self, fid: str) -> Finding | None:
         return next((f for f in self.findings if f.id == fid), None)

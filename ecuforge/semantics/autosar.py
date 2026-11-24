@@ -73,5 +73,6 @@ def module_footprint(p) -> dict:
         st.add("autosar", "inferred", "info",
                f"AUTOSAR module footprint for {len(table)} modules (basis: {basis}; attribution by "
                + ", ".join(f"{k}={v}" for k, v in how_count.items()) + ")",
-               [Source(p.map.artifact if p.map else p.elf_art.short, basis)], {"modules": table}, level="L2")
+               [Source(p.map.artifact if p.map else p.elf_art.short, basis)], {"modules": table}, level="L2",
+               key="autosar.footprint")
     return table

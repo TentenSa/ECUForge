@@ -147,20 +147,21 @@ def recover_layout(p) -> Layout:
         f = st.add("layout", "observed", "info",
                    f"{name}: run {vma:#010x} load {lma:#010x} size {size:#x} ({cls}, {init})", [src],
                    {"vma": vma, "lma": lma, "size": size, "class": cls, "class_evidence": ck,
-                    "region": row.region, "physical": row.physical, "core": row.core}, level="L0")
+                    "region": row.region, "physical": row.physical, "core": row.core}, level="L0", key=f"layout.section@{name}")
         row.finding = f.id
         lay.sections.append(row)
         if present is not None and present < size:
             st.add("layout", "derived", "warning" if present == 0 else "note",
                    f"{name}: {present}/{size} bytes of its load image are present in the image at {lma:#010x}",
                    [src] + [Source(a.short, f"addr {lma:#010x}+{size:#x}") for a in p.image_artifacts],
-                   {"present": present, "size": size}, [f.id])
+                   {"present": present, "size": size}, [f.id], key=f"layout.section_load_missing@{name}")
     p.layout_rows = lay.sections
     if excluded:
         st.add("layout", "observed", "info",
                f"{len(excluded)} sections excluded from memory layout: the ELF marks them not allocated "
                f"(SHF_ALLOC clear): {', '.join(excluded[:8])}{', ...' if len(excluded) > 8 else ''}",
-               [Source(p.elf_art.short, "section header flags")], {"sections": excluded}, level="L0")
+               [Source(p.elf_art.short, "section header flags")], {"sections": excluded}, level="L0",
+               key="layout.sections_not_allocated")
 
     views = build_views(p)
 
@@ -176,11 +177,12 @@ def recover_layout(p) -> Layout:
                             f"{row.name} [{row.vma:#010x}+{row.size:#x}] crosses the boundary of linker region "
                             f"{rel.b.name} [{rel.b.start:#010x}+{rel.b.size:#x}]",
                             [(row.source, f"{row.vma:#x}+{row.size:#x}"),
-                             (rel.b.sources[0], f"{rel.b.start:#x}+{rel.b.size:#x}")], derived_from=[row.finding])
+                             (rel.b.sources[0], f"{rel.b.start:#x}+{rel.b.size:#x}")], derived_from=[row.finding],
+                            key=f"layout.section_crosses_region@{row.name}:{rel.b.name}")
             elif rel.relation == OUTSIDE:
                 st.add("layout", "derived", "warning",
                        f"{row.name} at {row.vma:#010x} is outside every linker MEMORY region",
-                       [row.source], {}, [row.finding])
+                       [row.source], {}, [row.finding], key=f"layout.section_outside_regions@{row.name}")
 
     # ---- section overlaps -----------------------------------------------------
     srt = sorted(lay.sections, key=lambda r: prof.canonical(r.vma))
@@ -188,7 +190,7 @@ def recover_layout(p) -> Layout:
         if prof.canonical(a.vma) + a.size > prof.canonical(b.vma):
             st.conflict("layout", "error", f"Sections {a.name} and {b.name} overlap at run address",
                         [(a.source, f"{a.vma:#x}+{a.size:#x}"), (b.source, f"{b.vma:#x}+{b.size:#x}")],
-                        derived_from=[a.finding, b.finding])
+                        derived_from=[a.finding, b.finding], key=f"layout.section_overlap@{a.name}:{b.name}")
 
     # ---- linker region -> physical -------------------------------------------
     for r in views.linker_regions:
@@ -205,7 +207,7 @@ def recover_layout(p) -> Layout:
                    (f" ({rel.note})" if rel.note else ""),
                    r.sources + (rel.b.sources if rel.b else []),
                    {"used": used, "length": r.size, "pct": round(pct, 2), "physical_relation": rel.relation,
-                    "physical": rr.physical, "core": core})
+                    "physical": rr.physical, "core": core}, key=f"layout.region@{r.name}")
         rr.finding = f.id
         lay.relations.append({"a": r.name, "b": rr.physical, "rel": rel.relation, "pair": "linker-physical"})
         if rel.relation == OVERLAPS:
@@ -214,7 +216,8 @@ def recover_layout(p) -> Layout:
                         f"[{rel.b.start:#010x}..{rel.b.end:#010x}) disagree on boundaries",
                         [(r.sources[0], f"{r.start:#x}..{r.end:#x}"),
                          ((rel.b.sources or [Source(prof.artifact.short, rel.b.name)])[0],
-                          f"{rel.b.start:#x}..{rel.b.end:#x}")], derived_from=[f.id])
+                          f"{rel.b.start:#x}..{rel.b.end:#x}")], derived_from=[f.id],
+                        key=f"layout.region_overlaps_physical@{r.name}:{rel.b.name}")
         lay.regions.append(rr)
 
     # ---- image -> linker load ranges -----------------------------------------
@@ -233,7 +236,7 @@ def recover_layout(p) -> Layout:
                 st.add("layout", "derived", "note" if boot_slot else "warning",
                        f"Image bytes [{g0:#010x}+{g1 - g0:#x}] are OUTSIDE every linked load range"
                        + (f"; documented as {prel.b.name}" if prel.b else "; no documented physical region"),
-                       seg.sources + (prel.b.sources if prel.b else []), info)
+                       seg.sources + (prel.b.sources if prel.b else []), info, key=f"layout.image_unlinked@{g0:#010x}")
 
     # ---- per core (documented windows only) ----------------------------------
     for s in lay.sections:
@@ -244,7 +247,7 @@ def recover_layout(p) -> Layout:
     if unplaced:
         st.add("layout", "unknown", "note",
                f"{len(unplaced)} RAM sections cannot be attributed to a CPU: no documented physical region "
-               f"covers them in profile {prof.id}", [], {"sections": unplaced[:50]})
+               f"covers them in profile {prof.id}", [], {"sections": unplaced[:50]}, key="layout.ram_unattributed")
     return lay
 
 

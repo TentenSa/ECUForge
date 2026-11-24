@@ -27,7 +27,7 @@ def recover_entries(p, bmhds: list[dict]) -> list[dict]:
     if p.elf:
         out.append({"name": "ELF e_entry", "addr": p.elf.entry})
         st.add("startup", "observed", "info", f"ELF entry point {p.elf.entry:#010x}",
-               [Source(p.elf_art.short, "ELF header e_entry")])
+               [Source(p.elf_art.short, "ELF header e_entry")], key="startup.elf_entry")
     seen = set()
     for conv in conventions():
         for name, s in p.symbols().items():
@@ -38,7 +38,7 @@ def recover_entries(p, bmhds: list[dict]) -> list[dict]:
                     core = next((int(x) for x in m.groups() if x), None) if m.groups() else None
                     out.append({"name": name, "addr": s.addr, "core": core, "label": label})
                     st.add("startup", "inferred", "info", f"{label} by {conv.name} naming: {name} at {s.addr:#010x}",
-                           [s.source], {"core": core})
+                           [s.source], {"core": core}, key=f"startup.entry@{conv.name}:{name}")
     for b in bmhds:
         if not p.elf or b.get("crc_status") not in ("match", "inferred-match"):
             continue
@@ -47,15 +47,15 @@ def recover_entries(p, bmhds: list[dict]) -> list[dict]:
         if prof.same_location(b["stad"], p.elf.entry):
             st.add("startup", "derived", "info",
                    f"{b['slot']} STAD {b['stad']:#010x} and ELF entry {p.elf.entry:#010x} are the same location",
-                   src_b + [e])
+                   src_b + [e], key=f"startup.stad_vs_entry@{b['slot']}")
         elif prof.alternate(b["stad"]) is None and prof.alternate(p.elf.entry) is None:
             st.add("startup", "unknown", "note",
                    f"{b['slot']} STAD {b['stad']:#010x} vs ELF entry {p.elf.entry:#010x}: different addresses, and the "
-                   "profile documents no bus alias that could relate them", src_b + [e])
+                   "profile documents no bus alias that could relate them", src_b + [e], key=f"startup.stad_vs_entry@{b['slot']}")
         else:
             st.conflict("startup", "warning",
                         f"{b['slot']} STAD {b['stad']:#010x} and ELF entry {p.elf.entry:#010x} are different locations",
-                        [(src_b[0], hex(b["stad"])), (e, hex(p.elf.entry))])
+                        [(src_b[0], hex(b["stad"])), (e, hex(p.elf.entry))], key=f"startup.stad_vs_entry@{b['slot']}")
     return out
 
 
@@ -73,7 +73,8 @@ def recover_csa_stacks(p) -> dict:
                 c = int(m.group(1))
                 e = syms.get(end_fmt.format(c=c))
                 if e is None:
-                    st.add("startup", "unknown", "note", f"CSA begin {name} has no end symbol", [s.source])
+                    st.add("startup", "unknown", "note", f"CSA begin {name} has no end symbol", [s.source],
+                           key=f"startup.csa_no_end@{conv.name}:{name}")
                     continue
                 lo, hi = sorted((s.addr, e.addr))
                 win, wcore = _where(p, lo)
@@ -84,14 +85,14 @@ def recover_csa_stacks(p) -> dict:
                        f"CPU{c} CSA area [{lo:#010x}..{hi:#010x}) = {hi - lo:#x} bytes"
                        + (f" = {(hi - lo) // csa_size} frames of {csa_size} B" if csa_size else "")
                        + (f"; physical: {win}" if win else "; physical: UNKNOWN"),
-                       [s.source, e.source] + ([csa_src] if csa_src else []), rec)
+                       [s.source, e.source] + ([csa_src] if csa_src else []), rec, key=f"startup.csa@{conv.name}:{c}")
                 if csa_align and lo % csa_align:
                     st.add("startup", "derived", "error", f"CPU{c} CSA start {lo:#010x} is not {csa_align}-byte aligned",
-                           [s.source, align_src])
+                           [s.source, align_src], key=f"startup.csa_align@{conv.name}:{c}")
                 if csa_size and (hi - lo) % csa_size:
                     st.add("startup", "derived", "warning",
                            f"CPU{c} CSA size {hi - lo:#x} is not a multiple of the {csa_size}-byte frame",
-                           [s.source, e.source, csa_src])
+                           [s.source, e.source, csa_src], key=f"startup.csa_frame_multiple@{conv.name}:{c}")
             for pat, end_fmt, kind in conv.stacks:
                 m = pat.match(name)
                 if not m:
@@ -106,12 +107,14 @@ def recover_csa_stacks(p) -> dict:
                 res["stacks"][f"{kind}{c}"] = rec
                 st.add("startup", "derived", "info",
                        f"CPU{c} {kind} stack [{lo:#010x}..{hi:#010x}) = {hi - lo:#x} bytes"
-                       + (f"; physical: {win}" if win else "; physical: UNKNOWN"), [s.source, e.source], rec)
+                       + (f"; physical: {win}" if win else "; physical: UNKNOWN"), [s.source, e.source], rec,
+                       key=f"startup.stack@{conv.name}:{kind}{c}")
     if res["stacks"] and stack_align is None:
         st.add("startup", "unknown", "note", "Stack alignment rule not documented in architecture spec; not checked",
-               [Source(p.arch.artifact.short, "fact stack_align")])
+               [Source(p.arch.artifact.short, "fact stack_align")], key="startup.stack_align_unknown")
     if not res["csa"]:
-        st.add("startup", "unknown", "note", "No CSA symbols found by any registered naming convention", [])
+        st.add("startup", "unknown", "note", "No CSA symbols found by any registered naming convention", [],
+               key="startup.csa_none")
     return res
 
 
@@ -131,20 +134,23 @@ def recover_vectors(p) -> list[dict]:
                 out.append(rec)
                 f = st.add("startup", "inferred", "info",
                            f"CPU{c} {kind} vector table ({'BTV' if kind == 'trap' else 'BIV'} candidate) at "
-                           f"{s.addr:#010x} by {conv.name} naming", [s.source], rec)
+                           f"{s.addr:#010x} by {conv.name} naming", [s.source], rec,
+                           key=f"startup.vector_table@{conv.name}:{kind}{c}")
                 a_val, a_src = align[kind]
                 if a_val is None:
                     st.add("startup", "unknown", "note",
                            f"CPU{c} {kind} table alignment rule not documented in architecture spec; not checked",
-                           [Source(p.arch.artifact.short, f"fact {'btv' if kind == 'trap' else 'biv'}_align")], {}, [f.id])
+                           [Source(p.arch.artifact.short, f"fact {'btv' if kind == 'trap' else 'biv'}_align")], {}, [f.id],
+                           key=f"startup.vector_align_unknown@{conv.name}:{kind}{c}")
                 elif s.addr % a_val:
                     st.add("startup", "derived", "error", f"CPU{c} {kind} table {s.addr:#010x} not {a_val}-byte aligned",
-                           [s.source, a_src], {}, [f.id])
+                           [s.source, a_src], {}, [f.id], key=f"startup.vector_align@{conv.name}:{kind}{c}")
                 if kind == "trap" and classes and spacing and p.image.segments:
                     missing = [k for k in range(classes)
                                if p.image.read(s.addr + spacing * k, 4) in ERASED + (None,)]
                     st.add("startup", "derived", "warning" if missing else "info",
                            f"CPU{c}: trap classes {missing} have no code in the image" if missing
                            else f"CPU{c}: all {classes} trap class entries contain code",
-                           _img_src(p, s.addr, classes * spacing) + [cls_src, sp_src], {"missing": missing}, [f.id])
+                           _img_src(p, s.addr, classes * spacing) + [cls_src, sp_src], {"missing": missing}, [f.id],
+                           key=f"startup.trap_classes@{conv.name}:{c}")
     return out

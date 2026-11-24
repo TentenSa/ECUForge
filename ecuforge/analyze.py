@@ -43,7 +43,7 @@ def run_all(p: Project) -> dict:
         res["modules"] = module_footprint(p)
     elif p.a2l is not None:
         p.store.add("a2l", "unknown", "note", "A2L loaded but L2 semantics are experimental in 0.1.x; "
-                    "run with --experimental to correlate it", [], level="L2")
+                    "run with --experimental to correlate it", [], level="L2", key="a2l.not_enabled")
     res["run"] = p.run_record()
     return res
 
