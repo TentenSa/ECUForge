@@ -77,6 +77,19 @@ ecuforge profiles
 
 `analyze` writes `report.md`, `evidence.json`, `run.json` (tool version, target, profile id/version/SHA-256, artifact SHA-256s, options) and `linker_draft.ld`. It exits non-zero when any error finding exists.
 
+### Workspace (development, 0.2)
+
+```
+ecuforge init myproj --device tc38x
+ecuforge add app.elf -C myproj          # role guessed from the file; --role to override
+ecuforge add app.hex -C myproj
+ecuforge add app.map -C myproj
+ecuforge analyze -C myproj              # no input flags: analyse the workspace
+ecuforge show artifacts|findings|run -C myproj [--topic layout]
+```
+
+A workspace stores each artifact once by SHA-256 under `objects/sha256/`, records its role in `ecuforge.json`, and writes each analysis to `analysis/runs/<run_id>.json` and `analysis/current.json`. The run id is derived from the result, so an unchanged workspace gives the same run. Persisted output holds no absolute host paths.
+
 ## MCP server
 
 ```

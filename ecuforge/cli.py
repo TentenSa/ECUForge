@@ -28,12 +28,71 @@ def _open(a):
     return open_project(a.image, a.elf, a.map_, a.lsl, a.a2l, a.device, a.toolchain, a.bmhd_crc_mode, a.experimental)
 
 
+def _has_inputs(a) -> bool:
+    return any(getattr(a, k, None) for k in ("image", "elf", "map_", "lsl", "a2l"))
+
+
+def _workspace_cmd(args) -> int:
+    from .workspace import Workspace, WorkspaceError
+    try:
+        if args.cmd == "init":
+            ws = Workspace.init(args.path, args.device, args.toolchain, args.bmhd_crc_mode, args.experimental)
+            print(f"initialised workspace {ws.data['name']}")
+            return 0
+        ws = Workspace(args.workspace)
+        if args.cmd == "add":
+            e, added = ws.add(args.file, args.role)
+            print(f"{'added' if added else 'already present'}: {e['role']:<6} {e['name']}@{e['sha256'][:12]}")
+            return 0
+        if args.cmd == "analyze":
+            rec, run_id = ws.analyze()
+            s = rec["result"]["evidence"]["summary"]
+            print(f"run {run_id}: {s['total']} findings "
+                  f"({', '.join(f'{k}={v}' for k, v in s['by_severity'].items())})")
+            return 1 if s["by_severity"].get("error") else 0
+        if args.what == "artifacts":
+            for e in ws.data["artifacts"]:
+                print(f"{e['role']:<8} {e['sha256'][:12]}  {e['size']:>10}  {e['name']}")
+            return 0
+        cur = ws.current()
+        if cur is None:
+            print("no analysis yet; run `ecuforge analyze`", file=sys.stderr)
+            return 1
+        r = cur["result"]
+        if args.what == "run":
+            print(json.dumps({k: v for k, v in r.items() if k not in ("evidence", "linker_draft")} |
+                             {"run_id": cur["run_id"], "created_at": cur["created_at"]}, indent=2))
+        else:
+            for f in r["evidence"]["findings"]:
+                if args.topic in (None, f["topic"]):
+                    print(f"{f['id']:<13} {f['level']} {f['severity']:<8} {f['kind']:<9} {f['claim']}")
+        return 0
+    except WorkspaceError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser("ecuforge", description="Evidence-first analysis of automotive embedded builds")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("analyze", help="run all analyses; write report.md, evidence.json, run.json")
+    a = sub.add_parser("analyze", help="run all analyses: in a workspace (no input flags) or on the given files")
     _common(a)
-    a.add_argument("-o", "--out", default="ecuforge-out")
+    a.add_argument("-o", "--out", default="ecuforge-out", help="output directory (file mode only)")
+    a.add_argument("-C", "--workspace", default=".", help="workspace directory (default: current)")
+    i = sub.add_parser("init", help="create a project workspace")
+    i.add_argument("path")
+    i.add_argument("--device", default="tc38x", help="MCU profile name or JSON path")
+    i.add_argument("--toolchain", choices=["gnu", "tasking"])
+    i.add_argument("--bmhd-crc-mode", choices=["discover", "profile", "strict"])
+    i.add_argument("--experimental", action="store_true")
+    ad = sub.add_parser("add", help="add an artifact to the workspace")
+    ad.add_argument("file")
+    ad.add_argument("--role", choices=["image", "elf", "map", "lsl", "a2l"])
+    ad.add_argument("-C", "--workspace", default=".")
+    sh = sub.add_parser("show", help="show workspace contents or the latest analysis")
+    sh.add_argument("what", choices=["artifacts", "findings", "run"])
+    sh.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
+    sh.add_argument("-C", "--workspace", default=".")
     f = sub.add_parser("findings", help="run all analyses and print findings")
     _common(f)
     f.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
@@ -63,6 +122,9 @@ def main(argv=None) -> int:
         if args.out:
             Path(args.out).write_text(json.dumps(rec, indent=2))
         return 0 if vr.ok else 1
+
+    if args.cmd in ("init", "add", "show") or (args.cmd == "analyze" and not _has_inputs(args)):
+        return _workspace_cmd(args)
 
     p = _open(args)
     if args.cmd == "lookup":

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased (0.2 development)
+- Project workspace: `init`, `add`, `analyze`, `show`; content-addressed artifact store with separate roles; reproducible, path-free analysis runs.
+
 ## 0.1.1 (2026-11-12)
 ECUForge 0.1.1 establishes the reproducible evidence and artifact-reconstruction baseline for TriCore/AURIX analysis. Reference firmware built with a real TriCore toolchain is verified against preregistered expectations, with separate BMHD validation and explicit handling of unknown, conflicting and unsupported evidence.
 
