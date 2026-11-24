@@ -25,6 +25,16 @@ def test_reference_gate(ref):
     assert rec["result"] == "PASS"
 
 
+def test_synthetic_tasking_gate(gen):
+    """Public TASKING-format gate: S19 + TASKING map + LSL, same strict rules as the reference builds."""
+    vr, rec = verify(gen / "manifest_tasking.json")
+    s = vr.score()
+    assert s["expected_unknown"] == 0
+    assert (s["correct"], s["unknown"], s["conflict"], s["false_claim"], s["unexplained"]) == (
+        s["expected_facts"], 0, 0, 0, 0), rec["failures"] + rec["unexplained"]
+    assert rec["result"] == "PASS"
+
+
 @pytest.mark.skipif(shutil.which("tricore-elf-gcc") is None, reason="TriCore GCC not installed")
 @pytest.mark.parametrize("ref", REFS, ids=[r.name for r in REFS])
 def test_reference_rebuild_is_reproducible_and_matches_committed(ref, tmp_path):

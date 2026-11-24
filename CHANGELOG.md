@@ -4,6 +4,7 @@
 - Project workspace: `init`, `add`, `analyze`, `show`; content-addressed artifact store with separate roles; reproducible, path-free analysis runs.
 - Semantic finding keys (`<rule>@<subject>`) on every finding.
 - Consumer-neutral export model (`ecuforge.export.model`): stable ids anchored to the program image hash, physical regions with one canonical view and explicit alias views, sections, symbols and findings.
+- Release gate: synthetic TASKING-format fixture (S19, TASKING map, LSL) verified with the same strict rules as the reference builds. Region names follow the TASKING map (`mpe:pfls0`).
 
 ## 0.1.1 (2026-11-12)
 ECUForge 0.1.1 establishes the reproducible evidence and artifact-reconstruction baseline for TriCore/AURIX analysis. Reference firmware built with a real TriCore toolchain is verified against preregistered expectations, with separate BMHD validation and explicit handling of unknown, conflicting and unsupported evidence.
