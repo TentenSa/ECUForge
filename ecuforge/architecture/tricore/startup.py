@@ -27,7 +27,7 @@ def recover_entries(p, bmhds: list[dict]) -> list[dict]:
     if p.elf:
         out.append({"name": "ELF e_entry", "addr": p.elf.entry})
         st.add("startup", "observed", "info", f"ELF entry point {p.elf.entry:#010x}",
-               [Source(p.elf_art.short, "ELF header e_entry")], key="startup.elf_entry")
+               [Source(p.elf_art.short, "ELF header e_entry")], {"addr": p.elf.entry}, key="startup.elf_entry")
     seen = set()
     for conv in conventions():
         for name, s in p.symbols().items():
@@ -38,7 +38,7 @@ def recover_entries(p, bmhds: list[dict]) -> list[dict]:
                     core = next((int(x) for x in m.groups() if x), None) if m.groups() else None
                     out.append({"name": name, "addr": s.addr, "core": core, "label": label})
                     st.add("startup", "inferred", "info", f"{label} by {conv.name} naming: {name} at {s.addr:#010x}",
-                           [s.source], {"core": core}, key=f"startup.entry@{conv.name}:{name}")
+                           [s.source], {"core": core, "addr": s.addr}, key=f"startup.entry@{conv.name}:{name}")
     for b in bmhds:
         if not p.elf or b.get("crc_status") not in ("match", "inferred-match"):
             continue

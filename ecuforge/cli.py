@@ -44,6 +44,10 @@ def _workspace_cmd(args) -> int:
             e, added = ws.add(args.file, args.role)
             print(f"{'added' if added else 'already present'}: {e['role']:<6} {e['name']}@{e['sha256'][:12]}")
             return 0
+        if args.cmd == "export":
+            out = ws.export_ghidra(args.output)
+            print(f"wrote {out}")
+            return 0
         if args.cmd == "analyze":
             rec, run_id = ws.analyze()
             s = rec["result"]["evidence"]["summary"]
@@ -89,6 +93,10 @@ def main(argv=None) -> int:
     ad.add_argument("file")
     ad.add_argument("--role", choices=["image", "elf", "map", "lsl", "a2l"])
     ad.add_argument("-C", "--workspace", default=".")
+    ex = sub.add_parser("export", help="write an export of the workspace for another tool")
+    ex.add_argument("target", choices=["ghidra"])
+    ex.add_argument("-o", "--output", help="output file (default: <workspace>/exports/ghidra/ecuforge-ghidra.json)")
+    ex.add_argument("-C", "--workspace", default=".")
     sh = sub.add_parser("show", help="show workspace contents or the latest analysis")
     sh.add_argument("what", choices=["artifacts", "findings", "run"])
     sh.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
@@ -123,7 +131,7 @@ def main(argv=None) -> int:
             Path(args.out).write_text(json.dumps(rec, indent=2))
         return 0 if vr.ok else 1
 
-    if args.cmd in ("init", "add", "show") or (args.cmd == "analyze" and not _has_inputs(args)):
+    if args.cmd in ("init", "add", "show", "export") or (args.cmd == "analyze" and not _has_inputs(args)):
         return _workspace_cmd(args)
 
     p = _open(args)

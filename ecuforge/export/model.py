@@ -79,11 +79,21 @@ def _memory(p, prog: str) -> list[dict]:
     return regions
 
 
-def _address(f) -> int | None:
-    for k in ("addr", "address", "stad"):
+_ADDR_KEYS = ("addr", "address", "start", "vma", "bottom")
+
+
+def _address(f, by_id: dict, depth: int = 0) -> int | None:
+    """Address a finding is about: its own data first, else the finding it was derived from."""
+    for k in _ADDR_KEYS:
         v = f.data.get(k)
-        if isinstance(v, int):
+        if isinstance(v, int) and not isinstance(v, bool):
             return v
+    if depth < 4:
+        for d in f.derived_from:
+            parent = by_id.get(d)
+            a = _address(parent, by_id, depth + 1) if parent else None
+            if a is not None:
+                return a
     return None
 
 
@@ -94,6 +104,7 @@ def build_export(p, res: dict) -> dict:
     prof = p.profile.describe()
     lay = res["layout"]
     syms = sorted(p.symbols().values(), key=lambda s: (s.addr, s.name))
+    by_id = {f.id: f for f in p.store.findings}
     return {
         "schema_version": SCHEMA_VERSION,
         "ecuforge_version": __version__,
@@ -108,7 +119,7 @@ def build_export(p, res: dict) -> dict:
         "symbols": [{"id": symbol_id(prog, s.name, s.addr), "name": s.name, "addr": s.addr, "size": s.size,
                      "size_kind": s.size_kind, "origin": s.origin, "section": s.section} for s in syms],
         "findings": [{"id": finding_id(prog, f.key), "key": f.key, "kind": f.kind, "level": f.level,
-                      "severity": f.severity, "topic": f.topic, "claim": f.claim, "address": _address(f),
+                      "severity": f.severity, "topic": f.topic, "claim": f.claim, "address": _address(f, by_id),
                       "sources": [{"artifact_sha256": s.sha256, "type": s.type, "locator": s.locator}
                                   for s in f.sources]}
                      for f in p.store.findings],

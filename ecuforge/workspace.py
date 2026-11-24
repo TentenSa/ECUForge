@@ -192,6 +192,17 @@ class Workspace:
         (self.root / "analysis" / "current.json").write_text(_dumps(record))
         return record, run_id
 
+    def export_ghidra(self, output: str | Path | None = None) -> Path:
+        """Write the Ghidra export for the current workspace state. Returns the file path."""
+        from .analyze import run_all
+        from .export.ghidra import build_ghidra_export
+        p = self.open()
+        data = self._scrub(build_ghidra_export(p, run_all(p)))
+        out = Path(output) if output else self.root / "exports" / "ghidra" / "ecuforge-ghidra.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_dumps(data))
+        return out
+
     def current(self) -> dict | None:
         f = self.root / "analysis" / "current.json"
         return json.loads(f.read_text()) if f.is_file() else None

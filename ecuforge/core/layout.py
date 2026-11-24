@@ -206,7 +206,7 @@ def recover_layout(p) -> Layout:
                    f"physical: {rel.relation}" + (f" {rel.b.name}" if rel.b else "") +
                    (f" ({rel.note})" if rel.note else ""),
                    r.sources + (rel.b.sources if rel.b else []),
-                   {"used": used, "length": r.size, "pct": round(pct, 2), "physical_relation": rel.relation,
+                   {"start": r.start, "used": used, "length": r.size, "pct": round(pct, 2), "physical_relation": rel.relation,
                     "physical": rr.physical, "core": core}, key=f"layout.region@{r.name}")
         rr.finding = f.id
         lay.relations.append({"a": r.name, "b": rr.physical, "rel": rel.relation, "pair": "linker-physical"})

@@ -52,7 +52,7 @@ def recover_bmhd(p) -> list[dict]:
     for name, a, slot_src in slots:
         raw = p.image.read(a, 16)
         if raw is None:
-            st.add("startup", "unknown", "note", f"{name} ({a:#010x}) is not in the image", [slot_src],
+            st.add("startup", "unknown", "note", f"{name} ({a:#010x}) is not in the image", [slot_src], {"addr": a},
                    key=f"bmhd.slot_absent@{name}")
             continue
         g = lambda off, n, raw=raw: int.from_bytes(raw[off:off + n], "little")
