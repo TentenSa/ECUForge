@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecuforge"
-version = "0.1.1"
+version = "0.2.0.dev0"
 description = "Evidence-first reverse engineering for automotive embedded builds (AURIX TC3xx, AUTOSAR Classic)"
 requires-python = ">=3.10"
 license = { text = "MIT" }
