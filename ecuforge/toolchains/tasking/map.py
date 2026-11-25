@@ -34,8 +34,11 @@ def _num(s: str) -> int | None:
         return None
 
 
-def _tables(lines: list[str]):
-    """Yield (header_cells, rows[(line_no, cells)]) for every pipe table."""
+def _tables(lines: list[str], events: list | None = None):
+    """Yield (header_cells, rows[(line_no, cells)]) for every pipe table.
+
+    A row with more cells than its header cannot be mapped to columns: it is rejected (with an event when a
+    list is given), never shifted into the wrong columns."""
     i = 0
     while i < len(lines):
         ln = lines[i].strip()
@@ -47,8 +50,14 @@ def _tables(lines: list[str]):
                 r = lines[j].strip()
                 if r.startswith("|") and not r.startswith("|=") and not re.fullmatch(r"\|[-+|]*\|?", r):
                     cells = [c.strip() for c in r.strip("|").split("|")]
-                    cells += [""] * (len(header) - len(cells))
-                    rows.append((j + 1, cells))
+                    if len(cells) > len(header):
+                        if events is not None:
+                            events.append(ParseEvent("REJECTED_RECORD", j + 1,
+                                                     f"row has {len(cells)} cells, header has {len(header)}: {r}",
+                                                     "table row"))
+                    else:
+                        cells += [""] * (len(header) - len(cells))
+                        rows.append((j + 1, cells))
                 elif re.fullmatch(r"\|[-+|]*\|?", r):
                     pass
                 elif r.startswith("+") or r.startswith("|=") or not r:
@@ -82,7 +91,7 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
     seen_syms: set[tuple[str, int]] = set()
     load_copies: dict[str, tuple[int, int]] = {}
 
-    for header, rows in _tables(lines):
+    for header, rows in _tables(lines, lm.events):
         h = [x.lower() for x in header]
         if any(x.startswith("[in] file") for x in h):
             cf, cis, cisz, cos = (_col(header, "[in] File"), _col(header, "[in] Section"),
@@ -100,8 +109,13 @@ def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
             for ln, c in rows:
                 name = pending + c[cs]
                 sa = _num(c[csa])
-                if sa is None:  # wrapped long section name
-                    pending = name
+                if sa is None:
+                    if c[cs] and not c[csz] and not c[csa] and (cca is None or not c[cca]):
+                        pending = name  # wrapped long section name: only the name cell is filled
+                        continue
+                    lm.events.append(ParseEvent("REJECTED_RECORD", ln, "section row without a valid space address: "
+                                                + " | ".join(c), "table row"))
+                    pending = ""
                     continue
                 pending = ""
                 name = RE_IDX.sub("", name)
