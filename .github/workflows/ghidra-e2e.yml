@@ -1,0 +1,54 @@
+name: ghidra-e2e
+
+# Runs the Ghidra bridge against a real Ghidra release, on synthetic fixtures only.
+# Manual for now; becomes a required step of the release workflow before the 0.2 freeze.
+on:
+  workflow_dispatch:
+    inputs:
+      ghidra_version:
+        description: "Ghidra release, e.g. 12.2"
+        default: "12.2"
+      java_version:
+        description: "Temurin JDK major version"
+        default: "21"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java_version }}
+      - name: Download Ghidra and verify its SHA-256
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ inputs.ghidra_version }}
+        run: |
+          rel=$(gh api "repos/NationalSecurityAgency/ghidra/releases/tags/Ghidra_${V}_build")
+          name=$(jq -r '.assets[] | select(.name | test("^ghidra_.*_PUBLIC_.*\\.zip$")) | .name' <<<"$rel" | head -1)
+          url=$(jq -r --arg n "$name" '.assets[] | select(.name == $n) | .browser_download_url' <<<"$rel")
+          digest=$(jq -r --arg n "$name" '.assets[] | select(.name == $n) | .digest // empty' <<<"$rel")
+          test -n "$name" && test -n "$digest" || { echo "no release zip or no published digest"; exit 1; }
+          curl -sSfL -o ghidra.zip "$url"
+          echo "${digest#sha256:}  ghidra.zip" | sha256sum -c -
+          unzip -q ghidra.zip -d "$RUNNER_TEMP"
+          echo "GHIDRA_INSTALL_DIR=$(ls -d "$RUNNER_TEMP"/ghidra_*_PUBLIC)" >> "$GITHUB_ENV"
+          echo "Ghidra: $name" >> "$GITHUB_STEP_SUMMARY"
+      - name: Install ECUForge and the PyGhidra bundled with this Ghidra
+        run: |
+          pip install -e ".[dev]"
+          whl=$(find "$GHIDRA_INSTALL_DIR" -name 'pyghidra-*.whl' | head -1)
+          if [ -n "$whl" ]; then pip install "$whl"; else pip install pyghidra; fi
+      - name: Doctor
+        run: python -m ecuforge.cli doctor ghidra
+      - name: End-to-end
+        run: python scripts/ghidra_e2e.py "$RUNNER_TEMP/e2e"

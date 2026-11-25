@@ -16,6 +16,7 @@ from conftest import ROOT
 from ecuforge.formats.a2l.parser import parse_a2l
 from ecuforge.formats.elf import ElfFormatError, load_elf
 from ecuforge.formats.hexrec import RecordError, load_ihex, load_srec
+from ecuforge.formats.text import split_lines
 from ecuforge.toolchains.gnu.map import parse_gnu_map
 from ecuforge.toolchains.tasking.map import parse_lsl, parse_tasking_map
 
@@ -49,7 +50,7 @@ def _apply(lines, ops):
 
 def _write(tmp_path, name, text):
     f = tmp_path / name
-    f.write_text(text, errors="replace") if isinstance(text, str) else f.write_bytes(text)
+    f.write_text(text, encoding="utf-8", errors="replace") if isinstance(text, str) else f.write_bytes(text)
     return f
 
 
@@ -62,7 +63,7 @@ def test_ihex(tmp_path, text):
         img = load_ihex(f, "x", None, events)
     except RecordError:
         return
-    nonblank = sum(1 for l in text.splitlines() if l.strip())
+    nonblank = sum(1 for l in split_lines(text) if l.strip())
     assert img.stats["accepted_records"] + len(events) == nonblank  # nothing lost silently
 
 
@@ -75,7 +76,7 @@ def test_srec(tmp_path, text):
         img = load_srec(f, "x", None, events)
     except RecordError:
         return
-    nonblank = sum(1 for l in text.splitlines() if l.strip())
+    nonblank = sum(1 for l in split_lines(text) if l.strip())
     assert img.stats["accepted_records"] + len(events) == nonblank
 
 
@@ -93,7 +94,7 @@ def test_gnu_map(tmp_path, text):
     lm = parse_gnu_map(_write(tmp_path, "x.map", text), "x")
     _no_fabrication(text, [s.name for s in lm.sections] + [s.name for s in lm.symbols] + [r.name for r in lm.regions],
                     [s.addr for s in lm.sections] + [s.addr for s in lm.symbols] + [r.origin for r in lm.regions])
-    assert all(1 <= e.line <= max(1, len(text.splitlines())) for e in lm.events)
+    assert all(1 <= e.line <= max(1, len(split_lines(text))) for e in lm.events)
 
 
 @CFG

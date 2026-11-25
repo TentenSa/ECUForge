@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .events import ParseEvent
 from .image import MemoryImage
+from .text import read_text, split_lines
 
 
 class RecordError(ValueError):
@@ -25,7 +26,7 @@ def load_ihex(path: str | Path, origin: str, image: MemoryImage | None = None,
     first = True
     accepted = 0
     eof = False
-    for ln, raw in enumerate(Path(path).read_text(errors="replace").splitlines(), 1):
+    for ln, raw in enumerate(split_lines(read_text(path)), 1):
         line = raw.strip()
         if not line:
             continue
@@ -79,7 +80,7 @@ def load_srec(path: str | Path, origin: str, image: MemoryImage | None = None,
     probs = problems if problems is not None else []
     first = True
     accepted = 0
-    for ln, raw in enumerate(Path(path).read_text(errors="replace").splitlines(), 1):
+    for ln, raw in enumerate(split_lines(read_text(path)), 1):
         line = raw.strip()
         if not line:
             continue

@@ -23,7 +23,7 @@ def tree(tmp_path, monkeypatch):
     (tmp_path / "fixtures/public").mkdir()
     monkeypatch.setattr(guard, "ROOT", tmp_path)
     monkeypatch.setattr(guard, "tracked_files", lambda: [
-        str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file()])
+        p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*") if p.is_file()])
     return tmp_path
 
 

@@ -22,6 +22,7 @@ from pathlib import Path
 
 from ...formats.events import ParseEvent, health_from
 from ...formats.map.model import InputSection, LinkMap, MapSymbol, MemoryRegion, OutputSection
+from ...formats.text import read_text, split_lines
 
 H = r"0x[0-9a-fA-F]+"
 RE_MEM_ROW = re.compile(rf"^(\S+)\s+({H})\s+({H})(?:\s+(\S+))?\s*$")
@@ -43,8 +44,8 @@ SKIP_HEADS = ("LOAD ", "OUTPUT(", "START GROUP", "END GROUP", "OUTPUT_FORMAT", "
 
 def parse_gnu_map(path: str | Path, artifact: str) -> LinkMap:
     lm = LinkMap("gnu", artifact)
-    text = Path(path).read_text(errors="replace")
-    lines = text.splitlines()
+    text = read_text(path)
+    lines = split_lines(text)
     announced: dict = {}
     mode = "pre"
     cur_out: OutputSection | None = None
