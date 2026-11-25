@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased (0.2 development)
+- Version on `main` is now `0.2.0.dev0` until the 0.2 freeze; the released 0.1.1 stays at its tag.
+- CI: tests also run on Windows (Python 3.10 and 3.12).
+- `ghidra-e2e` workflow (manual): downloads a Ghidra release, verifies its published SHA-256, and runs `scripts/ghidra_e2e.py` on the synthetic fixtures: import as `tricore:LE:32:tc29x`, apply three times (the second real apply must change nothing), inspect the program with PyGhidra, and check that an image with a different hash is refused.
 - Fixed: parsers read artifacts as UTF-8 whatever the host locale and split records only at line feeds; on Windows the locale encoding and `str.splitlines()` (which also breaks at U+0085 and similar) made the same file parse differently.
 - Fixed: TASKING map table rows with more cells than their header are rejected with an event instead of being read into the wrong columns, and a section row with no valid space address is no longer joined to the next row as a wrapped name.
 - Fixed: the repository guard uses forward-slash paths and skips ignored caches when the tree is not a git checkout (for example a zip download); `.gitattributes` keeps fixture line endings unchanged on Windows checkouts.
