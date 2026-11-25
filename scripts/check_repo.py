@@ -39,9 +39,12 @@ def tracked_files() -> list[str]:
             return files
     except (OSError, subprocess.CalledProcessError):
         pass
-    return [str(p.relative_to(ROOT)) for p in ROOT.rglob("*")
-            if p.is_file() and ".git" not in p.parts and "generated" not in p.parts and "__pycache__" not in p.parts
-            and not any(x.endswith(".egg-info") for x in p.parts) and ".pytest_cache" not in p.parts]
+    # no git checkout (for example a zip download): walk the tree, skipping what .gitignore excludes
+    skip = {".git", "generated", "__pycache__", ".pytest_cache", ".hypothesis", ".ruff_cache", "ecuforge-out",
+            ".venv", "venv"}
+    return [p.relative_to(ROOT).as_posix() for p in ROOT.rglob("*")
+            if p.is_file() and not skip.intersection(p.relative_to(ROOT).parts)
+            and not any(x.endswith(".egg-info") for x in p.parts)]
 
 
 def sha256(p: Path) -> str:

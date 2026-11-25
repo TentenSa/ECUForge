@@ -1,0 +1,3 @@
+# Fixtures are hashed byte for byte in their provenance.yaml: never convert their line endings on checkout
+# (Git for Windows converts LF to CRLF by default, which would change every hash).
+fixtures/** -text

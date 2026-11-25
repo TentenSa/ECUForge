@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased (0.2 development)
+- Fixed: parsers read artifacts as UTF-8 whatever the host locale and split records only at line feeds; on Windows the locale encoding and `str.splitlines()` (which also breaks at U+0085 and similar) made the same file parse differently.
+- Fixed: TASKING map table rows with more cells than their header are rejected with an event instead of being read into the wrong columns, and a section row with no valid space address is no longer joined to the next row as a wrapped name.
+- Fixed: the repository guard uses forward-slash paths and skips ignored caches when the tree is not a git checkout (for example a zip download); `.gitattributes` keeps fixture line endings unchanged on Windows checkouts.
 - Project workspace: `init`, `add`, `analyze`, `show`; content-addressed artifact store with separate roles; reproducible, path-free analysis runs.
 - Semantic finding keys (`<rule>@<subject>`) on every finding.
 - Consumer-neutral export model (`ecuforge.export.model`): stable ids anchored to the program image hash, physical regions with one canonical view and explicit alias views, sections, symbols and findings.
