@@ -87,6 +87,8 @@ ecuforge add app.map -C myproj
 ecuforge analyze -C myproj              # no input flags: analyse the workspace
 ecuforge show artifacts|findings|run -C myproj [--topic layout]
 ecuforge export ghidra -C myproj        # writes exports/ghidra/ecuforge-ghidra.json
+ecuforge doctor ghidra                  # what your Ghidra install can do for TriCore
+ecuforge ghidra apply -C myproj --ghidra-project ~/ghidra/MyProj.gpr --program /app.hex [--dry-run]
 ```
 
 A workspace stores each artifact once by SHA-256 under `objects/sha256/`, records its role in `ecuforge.json`, and writes each analysis to `analysis/runs/<run_id>.json` and `analysis/current.json`. The run id is derived from the result, so an unchanged workspace gives the same run. Persisted output holds no absolute host paths.
