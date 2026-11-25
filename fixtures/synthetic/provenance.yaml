@@ -1,7 +1,7 @@
 schema_version: 1
 artifacts:
   - name: make_fixtures.py
-    sha256: e8f57ee5694faf899ab5f5cd076f3b8fd2764cba3856af548dfb4c88ac8ddb21
+    sha256: df701cf769e8bada34983396281b7e90d304065aaecd2046fbce5403fbfe7c23
 origin:
   type: generated
   note: All addresses, symbols, data and the synthetic MCU profile values are invented for testing.
@@ -10,13 +10,13 @@ generator:
   script: make_fixtures.py
   version: "0.1.1a2"
   seed: null  # deterministic, no randomness
-  outputs: [app.elf, app.hex, app.s19, app_gnu.map, app_tasking.map, app_tasking.s19, app.lsl, app.a2l, manifest.json, profile_synthetic_tc38x.json]
+  outputs: [app.elf, app.hex, app.s19, app_gnu.map, app_tasking.map, app_tasking.s19, app.lsl, app.a2l, manifest.json, manifest_tasking.json, profile_synthetic_tc38x.json]
   output_dir: fixtures/generated/synthetic (not committed)
 rights:
   license: MIT
   redistribution_allowed: true
 purpose:
   fixture_class: synthetic
-  targets: [hexrec, srec, elf, gnu_map, tasking_map, lsl, layout, views, bmhd, startup, raminit, a2l_experimental, verify]
+  targets: [hexrec, srec, elf, gnu_map, tasking_map, lsl, layout, views, bmhd, startup, raminit, a2l_experimental, verify, tasking_gate]
 verification:
   reviewed: true

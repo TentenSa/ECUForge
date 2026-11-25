@@ -48,11 +48,11 @@ class Project:
         self.store.add("input", "observed", "info",
                        f"MCU profile {d['id']} v{d['version']}: {d['unknown_facts']} facts unknown (null), "
                        f"{d['synthetic_facts']} synthetic", [Source(self.profile.artifact.short, "whole file")],
-                       {"profile": d, "unknown": self.profile.facts_unknown()})
+                       {"profile": d, "unknown": self.profile.facts_unknown()}, key=f"input.profile@{d['id']}")
         if d["synthetic_facts"]:
             self.store.add("input", "observed", "warning",
                            f"Profile {d['id']} contains synthetic facts: results are for testing only",
-                           [Source(self.profile.artifact.short, "whole file")])
+                           [Source(self.profile.artifact.short, "whole file")], key=f"input.profile_synthetic@{d['id']}")
         self.image = MemoryImage(alias=self.profile.alternate)
         self.image_from_elf = False
         self.image_artifacts: list[Artifact] = []
@@ -88,7 +88,7 @@ class Project:
         self.store.add("input", "observed", "info",
                        f"{art.type} image: {len(self.image.segments)} contiguous segment(s), {self.image.size} bytes",
                        [Source(art.short, "whole file")],
-                       {"segments": [(hex(a), n) for a, n, *_ in self.image.regions()]})
+                       {"segments": [(hex(a), n) for a, n, *_ in self.image.regions()]}, key="input.image")
         return art
 
     def add_elf(self, path: str) -> Artifact:
@@ -97,13 +97,14 @@ class Project:
         self.store.add("input", "observed", "info" if self.elf.machine == 44 else "warning",
                        f"ELF32 {self.elf.machine_name} ({'LE' if self.elf.little else 'BE'}), "
                        f"{len(self.elf.sections)} sections, {len(self.elf.symbols)} symbols, "
-                       f"entry {self.elf.entry:#010x}", [Source(art.short, "ELF header")])
+                       f"entry {self.elf.entry:#010x}", [Source(art.short, "ELF header")], key="input.elf")
         if not self.image_artifacts:
             self.elf.load_image(art.short, self.image)
             self.image_from_elf = True
             self.store.add("input", "derived", "note",
                            "No HEX/S19 given; image reconstructed from ELF PT_LOAD segments. A post-build "
-                           "image may differ (boot headers, CRCs, signatures).", [Source(art.short, "program headers")])
+                           "image may differ (boot headers, CRCs, signatures).", [Source(art.short, "program headers")],
+                           key="input.image_from_elf")
         self._symbols = None
         return art
 
@@ -116,7 +117,7 @@ class Project:
         self.store.add("input", "observed", "info",
                        f"{tc} map: {len(self.map.regions)} regions, {len(self.map.sections)} output sections, "
                        f"{sum(len(s.inputs) for s in self.map.sections)} input sections, "
-                       f"{len(self.map.symbols)} symbols", [Source(art.short, "whole file")])
+                       f"{len(self.map.symbols)} symbols", [Source(art.short, "whole file")], key="input.map")
         self._symbols = None
         return art
 
@@ -128,7 +129,7 @@ class Project:
         self._record_parse(art, self.lsl["events"], self.lsl["health"])
         self.store.add("input", "observed", "info",
                        f"LSL: {len(self.lsl['memories'])} memory declarations, {len(self.lsl['groups'])} groups",
-                       [Source(art.short, "whole file")], {"notes": notes})
+                       [Source(art.short, "whole file")], {"notes": notes}, key="input.lsl")
         return art
 
     def add_a2l(self, path: str) -> Artifact:
@@ -139,7 +140,7 @@ class Project:
         self.store.add("input", "observed", "info",
                        f"A2L: {len(self.a2l.characteristics)} characteristics, {len(self.a2l.measurements)} "
                        f"measurements, {len(self.a2l.axis_pts)} axis_pts, {len(self.a2l.segments)} memory segments",
-                       [Source(art.short, "whole file")], level="L0")
+                       [Source(art.short, "whole file")], level="L0", key="input.a2l")
         return art
 
     def _record_parse(self, art: Artifact, events: list, health) -> None:
@@ -158,7 +159,8 @@ class Project:
                            f"(line {health.announced[struct]}) but the parser recovered none; "
                            f"{health.unrecognized_lines} of {health.nonblank_lines} lines remain unclassified",
                            [Source(art.short, f"line {health.announced[struct]}")],
-                           {"code": f"{art.type}_STRUCTURE_NOT_RECOVERED", "structure": struct, "health": h}, level="L0")
+                           {"code": f"{art.type}_STRUCTURE_NOT_RECOVERED", "structure": struct, "health": h}, level="L0",
+                           key=f"input.structure_missing@{art.type}:{struct}")
         for kind, code, sev, what in (
                 ("REJECTED_RECORD", "PARSE_RECORDS_REJECTED", "error", "records rejected; their bytes are UNKNOWN"),
                 ("INCOMPLETE_ENTRY", "PARSE_INCOMPLETE_RECORDS", "warning", "structural records incomplete"),
@@ -168,13 +170,14 @@ class Project:
                 self.store.add("input", "unknown", sev, f"{code}: {len(ls)} {what} in {art.short} "
                                f"(lines {', '.join(map(str, ls[:10]))}{', ...' if len(ls) > 10 else ''})",
                                [Source(art.short, f"line {ln}") for ln in ls[:10]],
-                               {"code": code, "lines": ls, "health": h}, level="L0")
+                               {"code": code, "lines": ls, "health": h}, level="L0", key=f"input.parse@{art.type}:{code}")
         other = len(lines("UNRECOGNIZED_CONSTRUCT")) + len(lines("UNSUPPORTED_TABLE"))
         if other:
             self.store.add("input", "observed", "note",
                            f"PARSE_LINES_UNCLASSIFIED: {other} lines or tables in {art.short} not modelled; "
                            "preserved in evidence.json parse_events", src,
-                           {"code": "PARSE_LINES_UNCLASSIFIED", "count": other, "health": h}, level="L0")
+                           {"code": "PARSE_LINES_UNCLASSIFIED", "count": other, "health": h}, level="L0",
+                           key=f"input.unclassified@{art.type}")
 
     # ---- unified symbol view --------------------------------------------------
     def symbols(self) -> dict[str, ResolvedSymbol]:

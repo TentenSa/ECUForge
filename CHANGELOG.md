@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (0.2 development)
+- Project workspace: `init`, `add`, `analyze`, `show`; content-addressed artifact store with separate roles; reproducible, path-free analysis runs.
+- Semantic finding keys (`<rule>@<subject>`) on every finding.
+- Consumer-neutral export model (`ecuforge.export.model`): stable ids anchored to the program image hash, physical regions with one canonical view and explicit alias views, sections, symbols and findings.
+- Release gate: synthetic TASKING-format fixture (S19, TASKING map, LSL) verified with the same strict rules as the reference builds. Region names follow the TASKING map (`mpe:pfls0`).
+- `ecuforge export ghidra`: Ghidra export file (model, section permissions from ELF flags, BMHD structure type and instances, one bookmark per addressed finding, program notes for the rest). Applying it in Ghidra is a separate step.
+- `ecuforge ghidra apply` (PyGhidra): plans changes in plain Python, refuses a program whose image hash differs, never modifies blocks, symbols or data it did not create, maps alias views onto whichever view holds the loaded bytes, merges findings that share an address and category into one bookmark, and is idempotent. Written against the Ghidra 12.3 API; not yet run against a real Ghidra.
+- `ecuforge doctor ghidra`: PyGhidra, Java, Ghidra version, TriCore module and languages, and which TriCore 1.6.2 instructions the SLEIGH spec does not name.
+
 ## 0.1.1 (2026-11-12)
 ECUForge 0.1.1 establishes the reproducible evidence and artifact-reconstruction baseline for TriCore/AURIX analysis. Reference firmware built with a real TriCore toolchain is verified against preregistered expectations, with separate BMHD validation and explicit handling of unknown, conflicting and unsupported evidence.
 

@@ -59,7 +59,7 @@ def coverage_check(p, copy: list[dict], clear: list[dict], sources: list[Source]
         st.add("startup", "derived", "warning",
                f"{s.name} [{s.vma:#010x}+{s.size:#x}] is linked as RAM data but no init-table record covers it; "
                "uninitialised at startup unless other code handles it", [s.source] + sources[:1],
-               {"section": s.name}, [s.finding])
+               {"section": s.name}, [s.finding], key=f"startup.init_uncovered@{s.name}")
 
 
 def recover_init(p) -> dict:
@@ -81,12 +81,13 @@ def recover_init(p) -> dict:
         st.add("startup", r["kind"], "info" if r["kind"] == "derived" else "warning",
                r["summary"] + ("" if r["kind"] == "derived" else f"; problems: {'; '.join(r['problems'][:3])}"
                                if r["problems"] else ""),
-               r["sources"], {"entries": entries, "candidates": r.get("candidates"), "problems": r["problems"]})
+               r["sources"], {"entries": entries, "candidates": r.get("candidates"), "problems": r["problems"]},
+               key=f"startup.init_table@{dec.__module__}")
         results.append(r)
     good = [r for r in results if r["kind"] == "derived"]
     if good:
         coverage_check(p, [e for r in good for e in r["copy"]], [e for r in good for e in r["clear"]],
                        [s for r in good for s in r["sources"]])
     elif not results:
-        st.add("startup", "unknown", "note", "No init table found by any toolchain plug-in", [])
+        st.add("startup", "unknown", "note", "No init table found by any toolchain plug-in", [], key="startup.init_none")
     return {"tables": results}

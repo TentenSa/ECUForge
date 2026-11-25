@@ -28,12 +28,121 @@ def _open(a):
     return open_project(a.image, a.elf, a.map_, a.lsl, a.a2l, a.device, a.toolchain, a.bmhd_crc_mode, a.experimental)
 
 
+def _has_inputs(a) -> bool:
+    return any(getattr(a, k, None) for k in ("image", "elf", "map_", "lsl", "a2l"))
+
+
+def _ghidra_apply(args) -> int:
+    from pathlib import Path
+
+    from .workspace import Workspace, WorkspaceError
+    try:
+        export = Path(args.export) if args.export else Workspace(args.workspace).root / "exports/ghidra/ecuforge-ghidra.json"
+    except WorkspaceError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    if not export.is_file():
+        print(f"error: {export}: no export; run `ecuforge export ghidra` first", file=sys.stderr)
+        return 2
+    proj = Path(args.ghidra_project)
+    if proj.suffix == ".gpr":
+        proj = proj.with_suffix("")
+    try:
+        from .ghidra.adapter import apply_export
+        plan = apply_export(json.loads(export.read_text()), str(proj), args.program, args.dry_run)
+    except ImportError:
+        print("error: PyGhidra is not installed; see `ecuforge doctor ghidra`", file=sys.stderr)
+        return 2
+    if plan.refused:
+        print(f"refused: {plan.refused}", file=sys.stderr)
+        return 1
+    from collections import Counter
+    counts = ", ".join(f"{k}={v}" for k, v in sorted(Counter(plan.kinds()).items())) or "nothing to change"
+    print(("would apply: " if args.dry_run else "applied: ") + counts)
+    for r in plan.report:
+        print(f"  note: {r}")
+    return 0
+
+
+def _workspace_cmd(args) -> int:
+    from .workspace import Workspace, WorkspaceError
+    try:
+        if args.cmd == "init":
+            ws = Workspace.init(args.path, args.device, args.toolchain, args.bmhd_crc_mode, args.experimental)
+            print(f"initialised workspace {ws.data['name']}")
+            return 0
+        ws = Workspace(args.workspace)
+        if args.cmd == "add":
+            e, added = ws.add(args.file, args.role)
+            print(f"{'added' if added else 'already present'}: {e['role']:<6} {e['name']}@{e['sha256'][:12]}")
+            return 0
+        if args.cmd == "export":
+            out = ws.export_ghidra(args.output)
+            print(f"wrote {out}")
+            return 0
+        if args.cmd == "analyze":
+            rec, run_id = ws.analyze()
+            s = rec["result"]["evidence"]["summary"]
+            print(f"run {run_id}: {s['total']} findings "
+                  f"({', '.join(f'{k}={v}' for k, v in s['by_severity'].items())})")
+            return 1 if s["by_severity"].get("error") else 0
+        if args.what == "artifacts":
+            for e in ws.data["artifacts"]:
+                print(f"{e['role']:<8} {e['sha256'][:12]}  {e['size']:>10}  {e['name']}")
+            return 0
+        cur = ws.current()
+        if cur is None:
+            print("no analysis yet; run `ecuforge analyze`", file=sys.stderr)
+            return 1
+        r = cur["result"]
+        if args.what == "run":
+            print(json.dumps({k: v for k, v in r.items() if k not in ("evidence", "linker_draft")} |
+                             {"run_id": cur["run_id"], "created_at": cur["created_at"]}, indent=2))
+        else:
+            for f in r["evidence"]["findings"]:
+                if args.topic in (None, f["topic"]):
+                    print(f"{f['id']:<13} {f['level']} {f['severity']:<8} {f['kind']:<9} {f['claim']}")
+        return 0
+    except WorkspaceError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser("ecuforge", description="Evidence-first analysis of automotive embedded builds")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    a = sub.add_parser("analyze", help="run all analyses; write report.md, evidence.json, run.json")
+    a = sub.add_parser("analyze", help="run all analyses: in a workspace (no input flags) or on the given files")
     _common(a)
-    a.add_argument("-o", "--out", default="ecuforge-out")
+    a.add_argument("-o", "--out", default="ecuforge-out", help="output directory (file mode only)")
+    a.add_argument("-C", "--workspace", default=".", help="workspace directory (default: current)")
+    i = sub.add_parser("init", help="create a project workspace")
+    i.add_argument("path")
+    i.add_argument("--device", default="tc38x", help="MCU profile name or JSON path")
+    i.add_argument("--toolchain", choices=["gnu", "tasking"])
+    i.add_argument("--bmhd-crc-mode", choices=["discover", "profile", "strict"])
+    i.add_argument("--experimental", action="store_true")
+    ad = sub.add_parser("add", help="add an artifact to the workspace")
+    ad.add_argument("file")
+    ad.add_argument("--role", choices=["image", "elf", "map", "lsl", "a2l"])
+    ad.add_argument("-C", "--workspace", default=".")
+    ex = sub.add_parser("export", help="write an export of the workspace for another tool")
+    ex.add_argument("target", choices=["ghidra"])
+    ex.add_argument("-o", "--output", help="output file (default: <workspace>/exports/ghidra/ecuforge-ghidra.json)")
+    ex.add_argument("-C", "--workspace", default=".")
+    dr = sub.add_parser("doctor", help="check an external tool for use with ECUForge")
+    dr.add_argument("target", choices=["ghidra"])
+    dr.add_argument("--install-dir", help="Ghidra install (default: $GHIDRA_INSTALL_DIR)")
+    gh = sub.add_parser("ghidra", help="apply the Ghidra export to a program in a Ghidra project (PyGhidra)")
+    gh.add_argument("action", choices=["apply"])
+    gh.add_argument("--ghidra-project", required=True, help="Ghidra project: its .gpr file or <dir>/<name>")
+    gh.add_argument("--program", required=True, help="program path in the project, e.g. /app.hex")
+    gh.add_argument("--export", help="export file (default: <workspace>/exports/ghidra/ecuforge-ghidra.json)")
+    gh.add_argument("--dry-run", action="store_true", help="show the plan, change nothing")
+    gh.add_argument("-C", "--workspace", default=".")
+    sh = sub.add_parser("show", help="show workspace contents or the latest analysis")
+    sh.add_argument("what", choices=["artifacts", "findings", "run"])
+    sh.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
+    sh.add_argument("-C", "--workspace", default=".")
     f = sub.add_parser("findings", help="run all analyses and print findings")
     _common(f)
     f.add_argument("--topic", choices=["input", "layout", "symbols", "startup", "a2l", "autosar"])
@@ -63,6 +172,16 @@ def main(argv=None) -> int:
         if args.out:
             Path(args.out).write_text(json.dumps(rec, indent=2))
         return 0 if vr.ok else 1
+
+    if args.cmd == "doctor":
+        from .ghidra.doctor import check, render
+        text, code = render(check(args.install_dir))
+        print(text)
+        return code
+    if args.cmd == "ghidra":
+        return _ghidra_apply(args)
+    if args.cmd in ("init", "add", "show", "export") or (args.cmd == "analyze" and not _has_inputs(args)):
+        return _workspace_cmd(args)
 
     p = _open(args)
     if args.cmd == "lookup":
