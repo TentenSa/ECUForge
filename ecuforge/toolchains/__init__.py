@@ -2,11 +2,11 @@
 structures and symbol naming conventions, and registers them here."""
 from __future__ import annotations
 
-from pathlib import Path
+from ..formats.text import read_text
 
 
 def detect_map_toolchain(path: str) -> str:
-    head = Path(path).read_text(errors="replace")[:20000]
+    head = read_text(path)[:20000]
     return "tasking" if ("TASKING" in head or "|=====" in head) else "gnu"
 
 

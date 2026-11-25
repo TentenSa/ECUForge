@@ -19,6 +19,7 @@ from pathlib import Path
 
 from ...formats.events import ParseEvent, health_from
 from ...formats.map.model import InputSection, LinkMap, MapSymbol, MemoryRegion, OutputSection
+from ...formats.text import read_text, split_lines
 
 RE_IDX = re.compile(r"\s*\(\d+\)\s*$")
 
@@ -72,8 +73,8 @@ def _col(header: list[str], *names: str) -> int | None:
 
 def parse_tasking_map(path: str | Path, artifact: str) -> LinkMap:
     lm = LinkMap("tasking", artifact)
-    text = Path(path).read_text(errors="replace")
-    lines = text.splitlines()
+    text = read_text(path)
+    lines = split_lines(text)
     out_to_obj: dict[str, tuple[str, str, int, int]] = {}
     chip_base: dict[str, int] = {}
     chip_extent: dict[str, int] = {}
@@ -191,7 +192,7 @@ def _size(tok: str, defs: dict[str, str]) -> int | None:
 
 
 def parse_lsl(path: str | Path) -> dict:
-    text = Path(path).read_text(errors="replace")
+    text = read_text(path)
     clean = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     clean = re.sub(r"//[^\n]*", "", clean)
     defs = {m.group(1): m.group(2) for m in RE_DEFINE.finditer(clean)}
@@ -236,7 +237,7 @@ LSL_KNOWN = {"memory", "section_layout", "group", "select", "architecture", "der
 def _lsl_unsupported(text: str) -> list[tuple[int, str]]:
     """Top-level LSL statements this parser does not model, kept with their line numbers."""
     out, depth = [], 0
-    for ln, line in enumerate(text.splitlines(), 1):
+    for ln, line in enumerate(split_lines(text), 1):
         s = line.strip()
         if depth == 0 and s and not s.startswith("#") and s not in ("{", "}"):
             kw = re.match(r"[A-Za-z_]\w*", s)

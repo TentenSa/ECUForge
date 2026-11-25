@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..events import ParseEvent, ParseHealth, health_from
+from ..text import read_text
 
 DTYPE = {"UBYTE": (1, "B"), "SBYTE": (1, "b"), "UWORD": (2, "H"), "SWORD": (2, "h"),
          "ULONG": (4, "I"), "SLONG": (4, "i"), "A_UINT64": (8, "Q"), "A_INT64": (8, "q"),
@@ -226,7 +227,7 @@ class A2L:
 
 
 def parse_a2l(path: str | Path) -> A2L:
-    text = Path(path).read_text(errors="replace")
+    text = read_text(path)
     root = parse_blocks(text)
     a2l = A2L(str(path))
 

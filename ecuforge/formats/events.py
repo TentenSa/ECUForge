@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .text import split_lines
+
 KINDS = ("UNRECOGNIZED_CONSTRUCT", "REJECTED_RECORD", "UNSUPPORTED_TABLE", "UNPARSED_BLOCK", "INCOMPLETE_ENTRY")
 
 
@@ -46,7 +48,7 @@ class ParseHealth:
 
 def health_from(text: str, events: list, structural_records: int, announced: dict, recovered: dict,
                 fatal_kinds: tuple = ("REJECTED_RECORD",)) -> ParseHealth:
-    nonblank = sum(1 for line in text.splitlines() if line.strip())
+    nonblank = sum(1 for line in split_lines(text) if line.strip())
     unrec = sum(1 for e in events if e.kind != "UNSUPPORTED_TABLE")
     return ParseHealth(nonblank, max(nonblank - unrec, 0), structural_records, unrec,
                        sum(1 for e in events if e.kind in fatal_kinds), announced, recovered)

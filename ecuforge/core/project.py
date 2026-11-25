@@ -9,6 +9,7 @@ from ..architecture.tricore.spec import TriCoreSpec
 from ..formats.elf import ElfFile, load_elf
 from ..formats.hexrec import load_ihex, load_srec, sniff
 from ..formats.image import MemoryImage
+from ..formats.text import read_text
 from ..formats.map.model import LinkMap
 from ..silicon.infineon.aurix.profile import DeviceProfile
 from .evidence import Artifact, EvidenceStore, Source
@@ -81,7 +82,7 @@ class Project:
         (load_ihex if kind == "hex" else load_srec)(path, art.short, self.image, problems)
         self.image_artifacts.append(art)
         from ..formats.events import health_from
-        text = Path(path).read_text(errors="replace")
+        text = read_text(path)
         self._record_parse(art, problems, health_from(text, problems, self.image.stats.get("accepted_records", 0),
                                                       {"records": 1},
                                                       {"records": self.image.stats.get("accepted_records", 0)}))
